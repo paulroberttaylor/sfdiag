@@ -1,0 +1,37 @@
+# Recreation of the official "External Integrations via HTTP" reference diagram
+title: External Integrations via HTTP
+description: >-
+  This is an example solution architecture diagram from the Building Forms Decision
+  Guide that shows a connection to an external data source via an HTTP Callout in
+  Flow and an HTTP Action in OmniStudio.
+logo: salesforce
+layout: row
+nodes:
+  - id: crm
+    title: CRM Apps
+    icon: crm-apps
+    layout: column
+    footerIcons: [external-service]
+    children:
+      - id: flow
+        title: Flow
+        icon: flow
+        attributes: [HTTP Callout]
+        footerIcons: [form]
+      - id: omni
+        title: OmniStudio
+        icon: omnistudio
+        attributes: [HTTP Action]
+        footerIcons: [form]
+  - id: external
+    title: External Data Source
+    icon: building
+    children:
+      - id: api
+        title: API
+        height: 260
+connections:
+  - { from: flow, to: api, label: Request }
+  - { from: api, to: flow, label: Response }
+  - { from: omni, to: api, label: Request }
+  - { from: api, to: omni, label: Response }
