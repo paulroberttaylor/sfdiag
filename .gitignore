@@ -4,3 +4,4 @@ out
 *.png
 !examples/**/*.png
 !docs/**/*.png
+scratch

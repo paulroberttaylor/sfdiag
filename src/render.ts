@@ -127,7 +127,7 @@ function drawNode(svg: Svg, n: LNode) {
     svg.push(
       `<rect x="${r2(n.x)}" y="${r2(n.y)}" width="${r2(n.w)}" height="${r2(n.h)}" rx="${C.radius}" fill="${fill}" stroke="${stroke}" stroke-width="${bw}" filter="url(#sh)"/>`,
     );
-    if (n.icon) svg.icon(n.icon, n.x + C.iconTop + C.icon / 2, n.y + C.iconTop + C.icon / 2, C.icon);
+    if (n.icon) svg.icon(n.icon, n.x + C.iconTop + C.icon / 2, n.y + C.iconTop + C.icon / 2, n.icon.plain && !n.icon.custom ? C.icon * 0.62 : C.icon);
     n.titleLines.forEach((t, i) => svg.text(t, n.x + n.textX, n.y + n.titleCenter + i * C.titleLineHeight, C.titleSize, 700, C.titleColor));
     if (n.titleLines.length) {
       svg.push(

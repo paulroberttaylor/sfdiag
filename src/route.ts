@@ -62,12 +62,13 @@ function chooseSides(a: LNode, b: LNode, c: ConnectionInput): [Side, Side] {
   } else {
     const gapX = Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w));
     const gapY = Math.max(b.y - (a.y + a.h), a.y - (b.y + b.h));
+    // diagonal neighbours: Z-shaped route between facing sides, as drawn by hand
     if (gapX >= gapY) {
       fs = acx < bcx ? 'right' : 'left';
-      ts = acy < bcy ? 'top' : 'bottom';
+      ts = acx < bcx ? 'left' : 'right';
     } else {
       fs = acy < bcy ? 'bottom' : 'top';
-      ts = acx < bcx ? 'left' : 'right';
+      ts = acy < bcy ? 'top' : 'bottom';
     }
   }
   return [c.fromSide ?? fs, c.toSide ?? ts];
@@ -282,7 +283,7 @@ function astar(start: Point, startDir: Point, goal: Point, goalDir: Point, obsta
   const k0 = key(sx, sy, sd);
   best.set(k0, 0);
   heap.push(h(sx, sy), [sx, sy, sd, 0]);
-  const gdIn = dirIndex({ x: -goalDir.x, y: -goalDir.y }); // direction of travel arriving at goal
+  const gdIn = dirIndex(goalDir); // direction of travel when arriving at the goal
 
   const penalty = (a: Point, b: Point): number => {
     let p = 0;
@@ -402,7 +403,10 @@ export function routeAll(layout: Layout): Route[] {
     let obstacles = framed
       .filter((n) => !skip.has(n))
       .map((n) => ({ x: n.x - c, y: n.y - c, w: n.w + 2 * c, h: n.h + 2 * c }));
-    // never let clearance boxes swallow the stubs
+    // where nodes sit closer than the clearance, fall back to their bare outline
+    obstacles = obstacles.map((o) =>
+      inside(SA, o) || inside(SB, o) ? { x: o.x + c - 1, y: o.y + c - 1, w: o.w - 2 * c + 2, h: o.h - 2 * c + 2 } : o,
+    );
     obstacles = obstacles.filter((o) => !inside(SA, o) && !inside(SB, o));
     let mid = astar(SA, da, SB, { x: -db.x, y: -db.y }, obstacles, bounds, used);
     // straight shot if ports line up
@@ -423,14 +427,18 @@ function placeLabels(routes: Route[]): void {
   for (const r of routes) {
     const { label, step } = r.conn;
     if (!label && !step) continue;
-    // longest segment, preferring horizontal ones
-    let bi = 0;
-    let bl = -1;
+    const pwEst = (label ? measure(label, X.pillSize, 700) + 2 * X.pillPadX : 0) + (step ? X.stepSize + 5 : 0);
+    // segment with the most free room around the pill; horizontal wins ties
+    let bi = 1;
+    let bl = -Infinity;
     for (let i = 1; i < r.points.length; i++) {
       const a = r.points[i - 1];
       const b = r.points[i];
       const len = Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-      const score = len * (a.y === b.y ? 1.3 : 1);
+      const need = a.y === b.y ? pwEst : X.pillHeight;
+      // the final segment also carries the arrowhead
+      const room = len - need - (i === r.points.length - 1 ? X.arrowLength + 8 : 0) - (i === 1 && (r.conn.arrow === 'start' || r.conn.arrow === 'both') ? X.arrowLength + 8 : 0);
+      const score = room >= 24 ? room + (a.y === b.y ? 60 : 0) : room - 1000;
       if (score > bl) {
         bl = score;
         bi = i;

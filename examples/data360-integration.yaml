@@ -1,0 +1,87 @@
+# A busier solution architecture in the style of the Data 360 reference diagrams:
+# colour-coded vendor cards, batch vs streaming ingestion, numbered steps.
+title: Customer Data Integration with Data 360
+description: >-
+  Data 360 unifies customer data from AWS and on-premise sources, harmonises it in the
+  home org and activates it into Sales, Service and Marketing. Batch ingestion is shown
+  dashed, streaming ingestion solid.
+keyLabels:
+  solid: Streaming (minutes)
+  dashed: Batch (hourly to daily)
+  batch: Scheduled job
+  events: Platform Events
+layout: row
+gap: 40
+nodes:
+  - id: sources
+    frame: none
+    layout: column
+    children:
+      - id: aws-streaming
+        title: AWS Streaming
+        icon: slds:data_transforms/orange
+        color: orange
+        attributes: [Amazon Kinesis, Amazon MSK]
+      - id: aws-rdbms
+        title: AWS RDBMS
+        icon: database
+        color: orange
+        attributes: [Aurora PostgreSQL, RDS]
+        footerIcons: [batch]
+      - id: s3
+        title: AWS Object Storage
+        icon: storage
+        color: orange
+        attributes: [Structured, Unstructured]
+        footerIcons: [batch]
+  - id: core
+    frame: none
+    layout: column
+    children:
+      - id: home-org
+        title: Data 360 Home Org
+        icon: data-cloud
+        color: blue
+        layout: row
+        children:
+          - id: dataspaces
+            title: Data Spaces
+            icon: dataspace
+            attributes: [Sales, Marketing, Finance]
+          - id: d360-features
+            title: Data 360 Features
+            icon: einstein
+            attributes: [Identity Resolution, Calculated Insights, Segmentation]
+      - id: onprem
+        title: On-premise ERP
+        icon: building
+        attributes: [Orders, Invoices]
+        footerIcons: [events]
+  - id: targets
+    frame: none
+    layout: column
+    children:
+      - id: sales
+        title: Sales Cloud
+        icon: sales-cloud
+        color: blue
+        attributes: [Account 360, Next best action]
+      - id: service
+        title: Service Cloud
+        icon: service-cloud
+        color: blue
+        attributes: [Case context, Agentforce]
+      - id: marketing
+        title: Marketing Cloud
+        icon: marketing-cloud
+        color: blue
+        attributes: [Journeys, Personalization]
+connections:
+  - { from: aws-streaming, to: home-org, label: Out of the box connector, step: 1 }
+  - { from: aws-rdbms, to: home-org, label: Zero Copy, style: dashed, step: 2 }
+  - { from: s3, to: home-org, label: File federation, style: dashed, step: 3 }
+  - { from: onprem, to: home-org, label: MuleSoft, step: 4 }
+  - { from: dataspaces, to: d360-features }
+  - { from: home-org, to: sales, label: Data Activation, step: 5 }
+  - { from: home-org, to: service, label: Data Activation }
+  - { from: home-org, to: marketing, label: Segments, style: dashed }

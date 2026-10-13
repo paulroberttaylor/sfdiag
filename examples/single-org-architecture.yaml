@@ -1,0 +1,53 @@
+# Recreation of the official "Single Org Architecture" system landscape
+title: Single Org Architecture
+description: >-
+  This diagram details a single Salesforce instance centrally deployed with apps
+  configured locally by each business unit. The Salesforce container shows shared
+  functionality and individual application or product areas.
+keyLabels:
+  flow: Automation
+  einstein: AI
+  mobile: Apps
+  low-code: Low Code
+  database: Data
+  bot: Bots
+  security: Privacy
+  apex: Pro Code
+  tableau: Reports & Dashboards
+nodes:
+  - id: business-units
+    title: Business Units
+    children:
+      - { id: bu1, title: Business Unit 1 }
+      - { id: bu2, title: Business Unit 2 }
+      - { id: bu3, title: Business Unit 3 }
+      - { id: bu4, title: Business Unit 4 }
+      - { id: bun, title: Business Unit n }
+  - id: salesforce
+    title: Salesforce
+    icon: salesforce
+    attributes:
+      - Shared customer data
+      - Standardized processes
+      - Single sign on
+      - Shared apps
+      - Business Unit custom apps
+    footer: Platform Services
+    footerIcons: [flow, einstein, mobile, low-code, database, bot, security, apex, tableau]
+    children:
+      - id: sales
+        title: Sales Cloud
+        icon: sales-cloud
+        attributes: [Lead management, Opportunities, Forecasting, CPQ]
+      - id: service
+        title: Service Cloud
+        icon: service-cloud
+        attributes: [Case management, Knowledge, Omni-Channel, Field Service]
+      - id: experience
+        title: Experience Cloud
+        icon: experience-cloud
+        attributes: [Partner portal, Customer portal, Help center, Self-service]
+      - id: custom
+        title: Custom Apps
+        icon: crm-apps
+        attributes: [Business Unit apps, Approvals, Reporting, Integrations]
