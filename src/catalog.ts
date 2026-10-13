@@ -41,7 +41,7 @@ export const catalog: Record<string, IconDef> = {
   flow: { label: 'Flow', glyph: 'flow_alt', color: P.navy, aliases: ['automation', 'flows'] },
   apex: { label: 'Apex', glyph: 'apex', color: P.indigo, aliases: ['pro-code', 'code'] },
   'low-code': { label: 'Low Code', glyph: 'custom_apps', color: P.indigo },
-  database: { label: 'Data', glyph: 'database', color: P.indigo, aliases: ['data', 'db', 'storage'] },
+  database: { label: 'Data', glyph: 'database', color: P.indigo, aliases: ['data', 'db'] },
   bot: { label: 'Bots', glyph: 'robot', color: P.indigo, aliases: ['bots', 'chatbot'] },
   security: { label: 'Privacy', glyph: 'shield', color: P.indigo, aliases: ['privacy', 'shield'] },
   mobile: { label: 'Apps', glyph: 'phone_portrait', color: P.indigo, aliases: ['mobile-app', 'phone'] },

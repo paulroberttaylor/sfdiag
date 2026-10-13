@@ -10,7 +10,8 @@
     "build": "tsc",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "sfdiag": "tsx src/cli.ts"
+    "sfdiag": "tsx src/cli.ts",
+    "prepare": "tsc"
   },
   "engines": {
     "node": ">=20"
@@ -31,5 +32,12 @@
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.4"
-  }
+  },
+  "files": [
+    "dist",
+    "fonts",
+    "README.md"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts"
 }

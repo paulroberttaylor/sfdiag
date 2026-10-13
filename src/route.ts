@@ -41,7 +41,7 @@ function contains(a: Box, b: Box): boolean {
   return b.x >= a.x && b.y >= a.y && b.x + b.w <= a.x + a.w && b.y + b.h <= a.y + a.h;
 }
 
-function chooseSides(a: LNode, b: LNode, c: ConnectionInput): [Side, Side] {
+function chooseSides(a: LNode, b: LNode, c: ConnectionInput, all: LNode[]): [Side, Side] {
   const [ox0, ox1] = overlap(a.x, a.x + a.w, b.x, b.x + b.w);
   const [oy0, oy1] = overlap(a.y, a.y + a.h, b.y, b.y + b.h);
   const acx = a.x + a.w / 2;
@@ -56,6 +56,12 @@ function chooseSides(a: LNode, b: LNode, c: ConnectionInput): [Side, Side] {
   } else if (oy1 - oy0 >= 16 && (a.x + a.w <= b.x || b.x + b.w <= a.x)) {
     fs = acx < bcx ? 'right' : 'left';
     ts = acx < bcx ? 'left' : 'right';
+    // cards in between: skip over them along the top, as a hand-drawn diagram would
+    const x0 = Math.min(a.x + a.w, b.x + b.w);
+    const x1 = Math.max(a.x, b.x);
+    const skip = new Set<LNode>([a, b, ...ancestors(a), ...ancestors(b)]);
+    const blocked = all.some((n) => !skip.has(n) && n.framed && n.x < x1 && n.x + n.w > x0 && n.y < oy1 && n.y + n.h > oy0);
+    if (blocked) fs = ts = 'top';
   } else if (ox1 - ox0 >= 16) {
     fs = acy < bcy ? 'bottom' : 'top';
     ts = acy < bcy ? 'top' : 'bottom';
@@ -118,14 +124,40 @@ function assignPorts(routes: Route[]): Map<Route, [number, number]> {
     const key = [r.from.id, r.to.id].sort().join('|') + (horizontalSide(r.fromSide) ? 'h' : 'v');
     (groups.get(key) ?? groups.set(key, []).get(key)!).push(r);
   }
-  for (const rs of groups.values()) {
+  // claim slots per side so straight groups never share a port with each other
+  const minGap = 16;
+  const occupied = new Map<string, number[]>();
+  const sideKey = (n: LNode, s: Side) => `${n.id}:${s}`;
+  const free = (k: string, pos: number) => (occupied.get(k) ?? []).every((q) => Math.abs(q - pos) >= minGap);
+  const claim = (k: string, pos: number) => (occupied.get(k) ?? occupied.set(k, []).get(k)!).push(pos);
+  // larger bundles first: they need the most room
+  for (const rs of [...groups.values()].sort((a, b) => b.length - a.length)) {
     const r0 = rs[0];
     const [lo, hi] = overlap(...sideRange(r0.from, r0.fromSide), ...sideRange(r0.to, r0.toSide));
+    const ideal = (i: number) => (rs.length === 1 ? (lo + hi) / 2 : lo + ((i + 1) * (hi - lo)) / (rs.length + 1));
+    // try the ideal spread, then shift the whole bundle until every port is free
+    let shift: number | undefined;
+    for (let k = 0; k <= 40 && shift === undefined; k++) {
+      for (const sgn of k ? [1, -1] : [1]) {
+        const d = sgn * k * 8;
+        const ok = rs.every((r, i) => {
+          const pos = ideal(i) + d;
+          return pos >= lo && pos <= hi && free(sideKey(r.from, r.fromSide), pos) && free(sideKey(r.to, r.toSide), pos);
+        });
+        if (ok) {
+          shift = d;
+          break;
+        }
+      }
+    }
+    if (shift === undefined) continue; // no room: leave these to the general spreading below
     rs.forEach((r, i) => {
-      const pos = rs.length === 1 ? (lo + hi) / 2 : lo + ((i + 1) * (hi - lo)) / (rs.length + 1);
+      const pos = ideal(i) + shift!;
       const [ea, eb] = byRoute.get(r)!;
       ea.pos = eb.pos = pos;
       ea.fixed = eb.fixed = true;
+      claim(sideKey(r.from, r.fromSide), pos);
+      claim(sideKey(r.to, r.toSide), pos);
     });
   }
 
@@ -146,7 +178,6 @@ function assignPorts(routes: Route[]): Map<Route, [number, number]> {
       e.pos = b > a ? (a + b) / 2 : Math.min(Math.max(oc, lo), hi);
     }
     list.sort((a, b) => a.pos! - b.pos!);
-    const minGap = 16;
     for (let iter = 0; iter < 20; iter++) {
       let moved = false;
       for (let i = 1; i < list.length; i++) {
@@ -377,7 +408,7 @@ export function routeAll(layout: Layout): Route[] {
   for (const conn of layout.connections) {
     const from = layout.nodes.get(conn.from)!;
     const to = layout.nodes.get(conn.to)!;
-    const [fromSide, toSide] = chooseSides(from, to, conn);
+    const [fromSide, toSide] = chooseSides(from, to, conn, [...layout.nodes.values()]);
     routes.push({ conn, from, to, fromSide, toSide, points: [] });
   }
   const ports = assignPorts(routes);
@@ -424,46 +455,47 @@ export function routeAll(layout: Layout): Route[] {
 
 function placeLabels(routes: Route[]): void {
   const taken: Box[] = [];
+  const segsOf = (r: Route) => r.points.slice(1).map((b, i) => ({ a: r.points[i], b }));
   for (const r of routes) {
     const { label, step } = r.conn;
     if (!label && !step) continue;
-    const pwEst = (label ? measure(label, X.pillSize, 700) + 2 * X.pillPadX : 0) + (step ? X.stepSize + 5 : 0);
-    // segment with the most free room around the pill; horizontal wins ties
-    let bi = 1;
-    let bl = -Infinity;
-    for (let i = 1; i < r.points.length; i++) {
-      const a = r.points[i - 1];
-      const b = r.points[i];
-      const len = Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-      const need = a.y === b.y ? pwEst : X.pillHeight;
-      // the final segment also carries the arrowhead
-      const room = len - need - (i === r.points.length - 1 ? X.arrowLength + 8 : 0) - (i === 1 && (r.conn.arrow === 'start' || r.conn.arrow === 'both') ? X.arrowLength + 8 : 0);
-      const score = room >= 24 ? room + (a.y === b.y ? 60 : 0) : room - 1000;
-      if (score > bl) {
-        bl = score;
-        bi = i;
-      }
-    }
-    const a = r.points[bi - 1];
-    const b = r.points[bi];
     const pw = label ? measure(label, X.pillSize, 700) + 2 * X.pillPadX : 0;
     const ph = X.pillHeight;
     const sw = step ? X.stepSize + (label ? 5 : 0) : 0;
     const total = pw + sw;
-    let t = 0.5;
-    const at = (t: number): Point => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
-    const boxAt = (t: number): Box => {
-      const p = at(t);
+    const others = routes.filter((o) => o !== r).flatMap(segsOf);
+    const last = r.points.length - 1;
+    const arrowAtStart = r.conn.arrow === 'start' || r.conn.arrow === 'both';
+
+    // rank segments by free room around the pill; horizontal wins ties
+    const cands = segsOf(r)
+      .map(({ a, b }, k) => {
+        const i = k + 1;
+        const len = Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+        const need = a.y === b.y ? total : ph;
+        const room = len - need - (i === last ? X.arrowLength + 8 : 0) - (i === 1 && arrowAtStart ? X.arrowLength + 8 : 0);
+        return { a, b, score: room >= 24 ? room + (a.y === b.y ? 60 : 0) : room - 1000 };
+      })
+      .sort((p, q) => q.score - p.score);
+
+    const boxAt = (a: Point, b: Point, t: number): Box => {
+      const p = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
       return { x: p.x - total / 2, y: p.y - ph / 2, w: total, h: ph };
     };
-    const hit = (bx: Box) => taken.some((o) => bx.x < o.x + o.w + 4 && bx.x + bx.w + 4 > o.x && bx.y < o.y + o.h + 4 && bx.y + bx.h + 4 > o.y);
-    for (const cand of [0.5, 0.35, 0.65, 0.25, 0.75, 0.15, 0.85]) {
-      if (!hit(boxAt(cand))) {
-        t = cand;
-        break;
+    const clash = (bx: Box) =>
+      taken.some((o) => bx.x < o.x + o.w + 4 && bx.x + bx.w + 4 > o.x && bx.y < o.y + o.h + 4 && bx.y + bx.h + 4 > o.y) ||
+      others.some(({ a, b }) => segHitsBox(a, b, { x: bx.x - 3, y: bx.y - 3, w: bx.w + 6, h: bx.h + 6 }));
+    let chosen: Box | undefined;
+    search: for (const c of cands) {
+      for (const t of [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8]) {
+        const bx = boxAt(c.a, c.b, t);
+        if (!clash(bx)) {
+          chosen = bx;
+          break search;
+        }
       }
     }
-    const bx = boxAt(t);
+    const bx = chosen ?? boxAt(cands[0].a, cands[0].b, 0.5);
     taken.push(bx);
     if (step) r.step = { x: bx.x + X.stepSize / 2, y: bx.y + ph / 2, n: step };
     if (label) r.label = { x: bx.x + sw, y: bx.y, w: pw, h: ph, text: label };

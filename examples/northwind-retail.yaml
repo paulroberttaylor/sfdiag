@@ -1,0 +1,80 @@
+title: Northwind Retail Order Flow and Customer Data
+description: >-
+  Storefront orders flow through MuleSoft to SAP S/4HANA and the Manhattan warehouse, and order
+  status returns to Service Cloud. Data 360 unifies clickstream and order history to drive
+  Marketing Cloud journeys and Tableau dashboards.
+keyLabels:
+  solid: Real-time / streaming
+  dashed: Nightly batch
+layout: row
+gap: 40
+nodes:
+  - id: front
+    frame: none
+    layout: column
+    children:
+      - id: commerce
+        title: B2C Commerce
+        icon: commerce-cloud
+        attributes: [Northwind storefront, Order placement]
+      - id: service
+        title: Service Cloud
+        icon: service-cloud
+        layout: column
+        attributes: [Agent console, Where is my order]
+        children:
+          - id: agentforce
+            title: Agentforce Service Agent
+            icon: agentforce
+  - id: middle
+    frame: none
+    layout: column
+    children:
+      - id: mulesoft
+        title: MuleSoft
+        icon: mulesoft
+        attributes: [Order orchestration, Status sync]
+  - id: backend
+    frame: none
+    layout: column
+    children:
+      - id: sap
+        title: SAP S/4HANA
+        icon: building
+        color: orange
+        attributes: [ERP, Fulfilment, Order history]
+      - id: manhattan
+        title: Manhattan WMS
+        icon: server
+        color: orange
+        attributes: [Warehouse system]
+  - id: data
+    frame: none
+    layout: column
+    children:
+      - id: d360
+        title: Data 360
+        icon: data-cloud
+        attributes: [Profile unification, Segmentation]
+  - id: outputs
+    frame: none
+    layout: column
+    children:
+      - id: marketing
+        title: Marketing Cloud
+        icon: marketing-cloud
+        attributes: [Abandoned-cart journey, Post-purchase journey]
+      - id: tableau
+        title: Tableau
+        icon: tableau
+        attributes: [Executive dashboards]
+connections:
+  - { from: commerce, to: mulesoft, label: Place order, step: 1 }
+  - { from: mulesoft, to: sap, label: Order, step: 2 }
+  - { from: mulesoft, to: manhattan, label: Fulfilment request, step: 3 }
+  - { from: sap, to: mulesoft, label: Order status, step: 4 }
+  - { from: mulesoft, to: service, label: Status update, step: 5 }
+  - { from: commerce, to: d360, label: Clickstream }
+  - { from: sap, to: d360, label: Order history, style: dashed }
+  - { from: d360, to: marketing, label: Segments }
+  - { from: d360, to: tableau, label: Insights }
