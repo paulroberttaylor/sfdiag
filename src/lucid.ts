@@ -184,7 +184,7 @@ function drawHeader(b: Builder, l: Layout) {
       const col = i % k.cols;
       const row = Math.floor(i / k.cols);
       const x = k.box.x + H.keyPad + col * (k.colW + H.keyColGap);
-      const cy = k.box.y + H.keyPad + H.keyIcon / 2 + row * H.keyRowHeight;
+      const cy = k.box.y + k.top + H.keyIcon / 2 + row * k.rowH;
       items.push(keySymbol(b, e, x, cy));
       const t = b.text(e.label, x + (e.icon ? H.keyIcon : 30) + 10, cy, H.keyLabelSize, 400, H.text, 3);
       if (t) items.push(t);

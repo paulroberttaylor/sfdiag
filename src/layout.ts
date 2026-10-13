@@ -57,7 +57,7 @@ export interface HeaderLayout extends Box {
   descY: number; // first description line centre
   bulgeX: number;
   arcR: number;
-  key?: { box: Box; cols: number; colW: number; entries: KeyEntry[] };
+  key?: { box: Box; cols: number; rows: number; colW: number; rowH: number; top: number; entries: KeyEntry[] };
 }
 
 export interface Layout {
@@ -112,6 +112,10 @@ function build(input: NodeInput, parent: LNode | undefined, nodes: Map<string, L
   nodes.set(n.id, n);
   n.children = (input.children ?? []).map((c) => build(c, n, nodes, opts));
   return n;
+}
+
+function kidsAreLeaves(n: LNode): boolean {
+  return n.children.every((c) => c.framed && !c.children.length);
 }
 
 export function ancestors(n: LNode): LNode[] {
@@ -220,7 +224,7 @@ function measureNode(n: LNode, edges: ConnectionInput[], nodes: Map<string, LNod
   } else {
     contentW = n.textX + Math.max(titleW, attrW) + 20;
     base = n.attrLines.length ? attrBottom + 27 : n.ruleY + 20;
-    if (inp.footer || n.footerIcons.length) base = n.attrLines.length ? attrBottom + 20 : n.ruleY + 14;
+    if (inp.footer || n.footerIcons.length) base = n.attrLines.length ? attrBottom + (inp.footer ? 20 : 12) : n.ruleY + (inp.footer ? 14 : 8);
   }
   base = Math.max(base, iconBottom);
   n.footerY = base;
@@ -240,7 +244,9 @@ function place(n: LNode, x: number, y: number, w: number, h: number, isRoot = fa
   if (!n.children.length) return;
   const inp = n.input;
   const layoutKind = inp.layout ?? (isRoot ? 'column' : 'row');
-  const justify = inp.justify ?? 'stretch';
+  // rows of plain cards share the width; rows holding containers keep natural widths and
+  // give the spare room to the gaps, where connectors run (as in the reference diagrams)
+  const justify = inp.justify ?? (kidsAreLeaves(n) ? 'stretch' : 'space-between');
   const bx = x + n.bodyX;
   const by = y + n.bodyY;
   const bw = n.framed ? w - n.bodyX - K.pad : w;
@@ -333,17 +339,25 @@ function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], o
   if (entries.length) {
     const colW = Math.max(...entries.map((e) => (e.icon ? H.keyIcon : 30) + 10 + measure(e.label, H.keyLabelSize, 400)));
     const availW = width - bulgeMin - 50 - H.keyInset;
-    let cols = Math.max(1, Math.min(entries.length, Math.floor((availW - 2 * H.keyPad + H.keyColGap) / (colW + H.keyColGap))));
-    // prefer balanced rows of at most 4 columns
-    cols = Math.min(cols, 4, Math.max(1, Math.ceil(entries.length / Math.ceil(entries.length / Math.min(cols, 4)))));
-    const rows = Math.ceil(entries.length / cols);
+    const fit = Math.max(1, Math.floor((availW - 2 * H.keyPad + H.keyColGap) / (colW + H.keyColGap)));
+    // like the official keys: stack up to three entries per column, then add columns
+    let rows = Math.min(entries.length, 3);
+    let cols = Math.ceil(entries.length / rows);
+    while (cols > fit && cols > 1) cols = Math.ceil(entries.length / ++rows);
+    rows = Math.ceil(entries.length / cols);
     keyH = 2 * H.keyPad + H.keyIcon + (rows - 1) * H.keyRowHeight;
     const contentW = 2 * H.keyPad + cols * colW + (cols - 1) * H.keyColGap;
     const kw = Math.max(contentW, Math.min(availW, width * 0.38));
-    key = { box: { x: width - H.keyInset - kw, y: H.keyInset, w: kw, h: keyH }, cols, colW: (kw - 2 * H.keyPad - (cols - 1) * H.keyColGap) / cols, entries };
+    key = { box: { x: width - H.keyInset - kw, y: H.keyInset, w: kw, h: keyH }, cols, rows, colW: (kw - 2 * H.keyPad - (cols - 1) * H.keyColGap) / cols, rowH: H.keyRowHeight, top: H.keyPad, entries };
   }
   const h = Math.max(H.minHeight, textH, keyH + 2 * H.keyInset);
-  if (key) key.box.y = (h - key.box.h) / 2;
+  if (key) {
+    // the key panel fills the band's height; rows spread out to use it
+    key.box.h = h - 2 * H.keyInset;
+    const inner = key.box.h - 2 * H.keyPad - H.keyIcon;
+    key.rowH = key.rows > 1 ? Math.min(H.keyRowHeight * 1.5, inner / (key.rows - 1)) : 0;
+    key.top = (key.box.h - H.keyIcon - (key.rows - 1) * key.rowH) / 2;
+  }
   const contentTop = (h - (textH - 2 * H.padY)) / 2;
   const titleY = contentTop + logoH + titleLH / 2;
   return {
