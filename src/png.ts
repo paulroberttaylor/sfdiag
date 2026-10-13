@@ -6,7 +6,7 @@ export function svgToPng(svg: string, scale = 2): Buffer {
   const r = new Resvg(svg, {
     fitTo: { mode: 'zoom', value: scale },
     font: {
-      fontFiles: Object.values(fonts.files),
+      fontFiles: [...Object.values(fonts.files), ...Object.values(fonts.italicFiles).filter((f): f is string => !!f)],
       loadSystemFonts: false,
       defaultFontFamily: fonts.family,
     },

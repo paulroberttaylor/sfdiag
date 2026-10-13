@@ -82,6 +82,41 @@ external ids include building, cloud, server, storage, user, customer. Any SLDS 
 glyph works as `slds:<name>` or `slds:<name>/<colour>`. Drop official SVGs into an
 `icons/` folder next to the YAML to override any id.
 
+## Process flowcharts (interaction / order-of-execution style)
+
+For step-by-step flows use symbols and categories (see `examples/order-of-execution.yaml`):
+
+```yaml
+classes:                                   # categories → coloured cards + key chips
+  execute: { label: Execute, fill: "#E0F3E0", color: "#67B4A0" }
+  validate: { label: Validate, fill: "#D1F6FF", color: "#6FC3D8" }
+header: { band: "#413E73", color: "#2E2B55", eyebrow: Salesforce Platform, bold: true }
+lineColor: "#3E3A72"                       # default connector colour
+road: "#FBF9C9"                            # winding band behind the rows
+nodes:
+  - id: row1
+    frame: none
+    align: center                          # centre cards/diamonds on the row axis
+    children:
+      - { id: start, shape: pill, title: START }
+      - { id: s1, class: execute, title: 1. Loads the record, bullets: true, width: 160,
+          attributes: [Long bullet text wraps inside the card] }
+      - { id: d1, shape: decision, title: "Did it come from the UI?" }   # quote titles with commas
+  - id: row2
+    frame: none
+    reverse: true                          # right-to-left row: list children in flow order
+    children: [ ... ]
+connections:
+  - { from: d1, to: s2, label: "YES", color: "#2E8B57", fromSide: top }
+  - { from: d1, to: s3, label: "NO", color: "#C23934" }
+```
+
+- `shape: decision | pill | note` — diamonds/terminals connect at their points.
+- `badge: <icon>` puts a small icon in a card's corner; badges and `keyLabels`
+  icon entries appear in the key.
+- Put long-running rows in top-level `frame: none` rows; alternate `reverse: true` for a
+  snake layout and add `road:` to draw the band.
+
 ## Layout model (how to get a good picture)
 
 - Layout is nested boxes: each container arranges its children in a `row`, `column` or

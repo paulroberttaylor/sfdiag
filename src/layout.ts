@@ -1,4 +1,5 @@
 import type { ConnectionInput, DiagramInput, NodeInput } from './schema.js';
+import { resolveColor } from './theme.js';
 import { resolveIcon, type ResolvedIcon } from './catalog.js';
 import { measure, wrap } from './text.js';
 import { theme } from './theme.js';
@@ -26,6 +27,14 @@ export interface LNode extends Box {
   titleLines: string[];
   titleCenter: number; // relative y of first title line centre
   attrLines: string[];
+  attrDX: number[]; // per attribute line: x offset from textX (bullet continuation indent)
+  attrDY: number[]; // per attribute line: y offset from attrY
+  italicAttrs: boolean;
+  shape: 'card' | 'decision' | 'pill' | 'note';
+  fill: string;
+  stroke: string;
+  titleColor: string;
+  badge?: ResolvedIcon;
   textX: number; // relative x of title / attributes
   ruleY: number; // relative y of the title rule
   bodyX: number; // relative x of the children block
@@ -44,12 +53,18 @@ export interface LNode extends Box {
 export interface KeyEntry {
   label: string;
   icon?: ResolvedIcon;
+  chip?: { fill: string; stroke: string; text: string };
   line?: 'solid' | 'dashed' | 'dotted';
   color?: string;
 }
 
 export interface HeaderLayout extends Box {
   logo?: ResolvedIcon;
+  eyebrow?: string;
+  eyebrowY: number;
+  titleWeight: 400 | 700;
+  band: string;
+  color: string;
   titleLines: string[];
   descLines: string[];
   titleX: number;
@@ -57,7 +72,16 @@ export interface HeaderLayout extends Box {
   descY: number; // first description line centre
   bulgeX: number;
   arcR: number;
-  key?: { box: Box; cols: number; rows: number; colW: number; rowH: number; top: number; entries: KeyEntry[] };
+  key?: {
+    box: Box;
+    rows: number;
+    rowH: number;
+    top: number;
+    entries: KeyEntry[];
+    /** per entry: column x (relative to box.x) and row index */
+    slots: { x: number; row: number }[];
+  };
+  logoY: number;
 }
 
 export interface Layout {
@@ -72,6 +96,13 @@ export interface Layout {
 
 export interface LayoutOptions {
   iconDirs?: string[];
+  classes?: DiagramInput['classes'];
+  lineColor?: string;
+}
+
+/** Shapes that are not cards: fixed geometry, centred connection points, never stretched. */
+export function isSymbol(n: LNode): boolean {
+  return n.shape !== 'card';
 }
 
 function icon(ref: string | undefined, opts: LayoutOptions): ResolvedIcon | undefined {
@@ -81,7 +112,18 @@ function icon(ref: string | undefined, opts: LayoutOptions): ResolvedIcon | unde
   return r;
 }
 
+const shapeDefaults = {
+  card: { fill: C.fill, stroke: C.border, text: C.titleColor },
+  decision: { fill: '#FFD8D9', stroke: '#E35D6A', text: '#2C2D31' },
+  pill: { fill: '#FFFFFF', stroke: '', text: '' },
+  note: { fill: 'none', stroke: 'none', text: '#6B6D70' },
+};
+
 function build(input: NodeInput, parent: LNode | undefined, nodes: Map<string, LNode>, opts: LayoutOptions): LNode {
+  const shape = input.shape ?? 'card';
+  const cls = input.class ? opts.classes?.[input.class] : undefined;
+  const lineColor = resolveColor(opts.lineColor, X.color);
+  const def = shapeDefaults[shape];
   const n: LNode = {
     id: input.id,
     input,
@@ -93,6 +135,14 @@ function build(input: NodeInput, parent: LNode | undefined, nodes: Map<string, L
     titleLines: [],
     titleCenter: 0,
     attrLines: [],
+    attrDX: [],
+    attrDY: [],
+    italicAttrs: !!input.bullets,
+    shape,
+    fill: resolveColor(input.fill ?? cls?.fill, def.fill),
+    stroke: resolveColor(input.color ?? cls?.color, def.stroke || lineColor),
+    titleColor: resolveColor(cls?.text, def.text || lineColor),
+    badge: icon(input.badge, opts),
     textX: 0,
     ruleY: 0,
     bodyX: 0,
@@ -112,6 +162,53 @@ function build(input: NodeInput, parent: LNode | undefined, nodes: Map<string, L
   nodes.set(n.id, n);
   n.children = (input.children ?? []).map((c) => build(c, n, nodes, opts));
   return n;
+}
+
+/** Lay out attribute lines (wrapping long ones); returns [width, offset of last line]. */
+function layoutAttrs(n: LNode, maxW: number): [number, number] {
+  const bullets = !!n.input.bullets;
+  const size = C.attrSize;
+  const bw = bullets ? measure('•  ', size, 400, true) : 0;
+  const itemGap = bullets ? 17 : C.attrLineHeight;
+  const contGap = 12.5;
+  n.attrLines = [];
+  n.attrDX = [];
+  n.attrDY = [];
+  let y = 0;
+  let w = 0;
+  (n.input.attributes ?? []).forEach((a, i) => {
+    const lines = bullets ? wrap(a, size, 400, maxW - bw, true) : [a];
+    lines.forEach((l, j) => {
+      if (i > 0 || j > 0) y += j === 0 ? itemGap : contGap;
+      n.attrLines.push(bullets && j === 0 ? `•  ${l}` : l);
+      n.attrDX.push(bullets && j > 0 ? bw : 0);
+      n.attrDY.push(y);
+      w = Math.max(w, (j > 0 ? bw : 0) + measure(n.attrLines[n.attrLines.length - 1], size, 400, n.italicAttrs));
+    });
+  });
+  return [w, y];
+}
+
+function measureSymbol(n: LNode): void {
+  const inp = n.input;
+  const title = inp.title ?? '';
+  if (n.shape === 'decision') {
+    // text block inscribed in the diamond: |dx|/(w/2) + |dy|/(h/2) <= 1 at its corners
+    const lines = wrap(title, X.decisionSize, 400, inp.width ? inp.width * 0.5 : 84, true);
+    const tw = Math.max(...lines.map((l) => measure(l, X.decisionSize, 400, true)));
+    const th = lines.length * X.decisionLineHeight;
+    n.titleLines = lines;
+    n.nw = Math.max(inp.width ?? 0, 1.75 * tw + 28, 112);
+    n.nh = Math.max(inp.height ?? 0, 1.75 * th + 30, 84);
+  } else if (n.shape === 'pill') {
+    n.titleLines = [title];
+    n.nw = Math.max(inp.width ?? 0, measure(title, 9.5, 700) + 26);
+    n.nh = Math.max(inp.height ?? 0, 20);
+  } else {
+    n.titleLines = wrap(title, C.attrSize, 400, inp.width ?? 150, true);
+    n.nw = Math.max(...n.titleLines.map((l) => measure(l, C.attrSize, 400, true))) + 4;
+    n.nh = n.titleLines.length * 12.5 + 4;
+  }
 }
 
 function kidsAreLeaves(n: LNode): boolean {
@@ -154,6 +251,7 @@ function crossingGaps(parent: LNode, axis: 'x' | 'y', base: number, edges: Conne
 function measureNode(n: LNode, edges: ConnectionInput[], nodes: Map<string, LNode>, isRoot = false): void {
   for (const c of n.children) measureNode(c, edges, nodes);
   const inp = n.input;
+  if (isSymbol(n)) return measureSymbol(n);
   const layoutKind = inp.layout ?? (isRoot ? 'column' : 'row');
   const baseGap = inp.gap ?? (isRoot ? theme.canvas.topGap : K.gap);
 
@@ -171,10 +269,10 @@ function measureNode(n: LNode, edges: ConnectionInput[], nodes: Map<string, LNod
       bw = cols * cw + (cols - 1) * baseGap;
       bh = total + (rows - 1) * baseGap;
     } else if (layoutKind === 'row') {
-      const allLeaves = n.children.every((c) => !c.children.length && c.framed);
+      const allLeaves = n.children.every((c) => !c.children.length && c.framed && !isSymbol(c));
       if (allLeaves) {
         const m = Math.max(...n.children.map((c) => c.nw));
-        for (const c of n.children) c.nw = m;
+        if (inp.align !== 'center' && inp.align !== 'start' && inp.align !== 'end') for (const c of n.children) c.nw = m;
       }
       n.gaps = crossingGaps(n, 'x', baseGap, edges, nodes);
       bw = n.children.reduce((s, c) => s + c.nw, 0) + n.gaps.reduce((s, g) => s + g, 0);
@@ -202,10 +300,9 @@ function measureNode(n: LNode, edges: ConnectionInput[], nodes: Map<string, LNod
   n.ruleY = n.titleCenter + (tl - 1) * C.titleLineHeight + C.ruleGap;
   const titleW = Math.max(0, ...n.titleLines.map((l) => measure(l, C.titleSize, 700)));
 
-  n.attrLines = inp.attributes ?? [];
-  const attrW = Math.max(0, ...n.attrLines.map((l) => measure(l, C.attrSize, 400)));
+  const [attrW, attrLast] = layoutAttrs(n, inp.width ? inp.width - n.textX - 14 : 230);
   n.attrY = n.ruleY + C.attrFirstGap;
-  const attrBottom = n.attrLines.length ? n.attrY + (n.attrLines.length - 1) * C.attrLineHeight : 0;
+  const attrBottom = n.attrLines.length ? n.attrY + attrLast : 0;
   const footerTextW = inp.footer ? measure(inp.footer, C.footerSize, 400) + 30 : 0;
   const footerIconsW = n.footerIcons.length * C.footerIcon + (n.footerIcons.length - 1) * C.footerIconGap + 2 * C.pad;
   const iconBottom = n.icon ? C.iconTop + C.icon + 10 : 0;
@@ -216,7 +313,7 @@ function measureNode(n: LNode, edges: ConnectionInput[], nodes: Map<string, LNod
     const attrColW = n.attrLines.length ? attrW + K.attrColumnGap : 0;
     n.bodyX = n.attrLines.length ? n.textX + attrColW : K.pad;
     n.bodyY = n.ruleY + K.bodyGap;
-    const attrH = n.attrLines.length ? (n.attrLines.length - 1) * C.attrLineHeight + 10 : 0;
+    const attrH = n.attrLines.length ? attrLast + 10 : 0;
     n.attrY = n.bodyY + 5;
     contentW = n.bodyX + bw + K.pad;
     base = n.bodyY + Math.max(bh, attrH) + K.bottomPad;
@@ -232,6 +329,7 @@ function measureNode(n: LNode, edges: ConnectionInput[], nodes: Map<string, LNod
   if (n.footerIcons.length) base += C.footerIconPadY * 2 + C.footerIcon;
   else if (inp.footer) base += 10;
 
+  if (n.badge) base += 8;
   n.nw = Math.max(C.minWidth, inp.width ?? 0, contentW, n.textX + titleW + 20, footerTextW, footerIconsW);
   n.nh = Math.max(base, inp.height ?? 0);
 }
@@ -251,7 +349,15 @@ function place(n: LNode, x: number, y: number, w: number, h: number, isRoot = fa
   const by = y + n.bodyY;
   const bw = n.framed ? w - n.bodyX - K.pad : w;
   const bh = n.framed ? n.blockH : h;
-  const kids = n.children;
+  const kids = inp.reverse ? [...n.children].reverse() : n.children;
+  const align = inp.align ?? 'stretch';
+  // cross-axis placement of one child within `span` starting at `start`
+  const cross = (c: LNode, start: number, span: number, natural: number): [number, number] => {
+    const a = isSymbol(c) && align === 'stretch' ? 'center' : align;
+    if (a === 'stretch') return [start, Math.max(span, natural)];
+    const off = a === 'start' ? 0 : a === 'end' ? span - natural : (span - natural) / 2;
+    return [start + Math.max(0, off), natural];
+  };
 
   if (layoutKind === 'grid') {
     const cols = Math.min(inp.columns ?? Math.ceil(Math.sqrt(kids.length)), kids.length);
@@ -271,20 +377,23 @@ function place(n: LNode, x: number, y: number, w: number, h: number, isRoot = fa
   const natural = horizontal ? n.blockW : n.blockH;
   const avail = horizontal ? bw : bh;
   const extra = Math.max(0, avail - natural);
-  const gaps = [...n.gaps];
+  const gaps = inp.reverse ? [...n.gaps].reverse() : [...n.gaps];
   let offset = 0;
   let grow = 0;
-  if (horizontal && justify === 'stretch') grow = extra / kids.length;
+  if (horizontal && justify === 'stretch') grow = kids.some(isSymbol) ? 0 : extra / kids.length;
+  if (horizontal && justify === 'stretch' && kids.some(isSymbol)) gaps.forEach((_, i) => (gaps[i] += extra / Math.max(1, kids.length - 1)));
   else if (justify === 'center') offset = extra / 2;
   else if (justify === 'space-between' && kids.length > 1) gaps.forEach((_, i) => (gaps[i] += extra / (kids.length - 1)));
 
   let cur = (horizontal ? bx : by) + offset;
   kids.forEach((c, i) => {
     if (horizontal) {
-      place(c, cur, by, c.nw + grow, Math.max(bh, c.nh));
+      const [cy, ch] = cross(c, by, bh, c.nh);
+      place(c, cur, cy, isSymbol(c) ? c.nw : c.nw + grow, ch);
       cur += c.nw + grow + (gaps[i] ?? 0);
     } else {
-      place(c, bx, cur, Math.max(bw, c.nw), c.nh);
+      const [cx, cw] = cross(c, bx, bw, c.nw);
+      place(c, cx, cur, cw, c.nh);
       cur += c.nh + (gaps[i] ?? 0);
     }
   });
@@ -298,8 +407,16 @@ function keyEntries(input: DiagramInput, nodes: Map<string, LNode>, opts: Layout
   }
   const out: KeyEntry[] = [];
   const seen = new Set<string>();
+  const used = new Set([...nodes.values()].map((n) => n.input.class).filter(Boolean));
+  for (const [name, c] of Object.entries(input.classes ?? {})) {
+    if (!used.has(name)) continue;
+    out.push({
+      label: c.label ?? name,
+      chip: { fill: resolveColor(c.fill, '#FFFFFF'), stroke: resolveColor(c.color, C.border), text: resolveColor(c.text, '#000000') },
+    });
+  }
   for (const n of nodes.values()) {
-    for (const ic of n.footerIcons) {
+    for (const ic of [...n.footerIcons, ...(n.badge ? [n.badge] : [])]) {
       if (seen.has(ic.id)) continue;
       seen.add(ic.id);
       out.push({ label: labels[ic.id] ?? ic.label, icon: ic });
@@ -327,9 +444,10 @@ function keyEntries(input: DiagramInput, nodes: Map<string, LNode>, opts: Layout
 function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], opts: LayoutOptions): HeaderLayout {
   const titleAreaW = Math.min(Math.max(width * 0.42, 320), 560);
   const logo = icon(input.logo, opts);
-  const titleLines = wrap(input.title, H.titleSize, 400, titleAreaW);
+  const titleWeight = input.header?.bold ? 700 : 400;
+  const titleLines = wrap(input.title, H.titleSize, titleWeight, titleAreaW);
   const descLines = input.description ? wrap(input.description, H.descSize, 400, titleAreaW) : [];
-  const logoH = logo ? 44 : 0;
+  const logoH = (logo ? 44 : 0) + (input.header?.eyebrow ? 20 : 0);
   const titleLH = H.titleSize * 1.3;
   const textH = H.padY * 2 + logoH + titleLines.length * titleLH + (descLines.length ? 10 + descLines.length * H.descLineHeight : 0);
 
@@ -337,18 +455,35 @@ function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], o
   const bulgeMin = H.padX + titleAreaW + 40;
   let keyH = 0;
   if (entries.length) {
-    const colW = Math.max(...entries.map((e) => (e.icon ? H.keyIcon : 30) + 10 + measure(e.label, H.keyLabelSize, 400)));
+    const entryW = (e: KeyEntry) =>
+      e.chip ? measure(e.label, H.keyLabelSize, 600) + 28 : (e.icon ? H.keyIcon : 30) + 10 + measure(e.label, H.keyLabelSize, 400);
     const availW = width - bulgeMin - 50 - H.keyInset;
-    const fit = Math.max(1, Math.floor((availW - 2 * H.keyPad + H.keyColGap) / (colW + H.keyColGap)));
-    // like the official keys: stack up to three entries per column, then add columns
-    let rows = Math.min(entries.length, 3);
-    let cols = Math.ceil(entries.length / rows);
-    while (cols > fit && cols > 1) cols = Math.ceil(entries.length / ++rows);
-    rows = Math.ceil(entries.length / cols);
+    // category chips, then icons and line styles; each group starts its own column and
+    // columns fill top-to-bottom (up to three entries each, as in the official keys)
+    const groups = [entries.filter((e) => e.chip), entries.filter((e) => !e.chip)].filter((g) => g.length);
+    const pack = (rows: number) => {
+      const cols: KeyEntry[][] = [];
+      for (const g of groups) for (let i = 0; i < g.length; i += rows) cols.push(g.slice(i, i + rows));
+      const widths = cols.map((c) => Math.max(...c.map(entryW)));
+      return { cols, widths, w: 2 * H.keyPad + widths.reduce((a, b) => a + b, 0) + (cols.length - 1) * H.keyColGap * 2 };
+    };
+    let rows = Math.min(Math.max(...groups.map((g) => g.length)), 3);
+    let packed = pack(rows);
+    while (packed.w > availW && rows < entries.length) packed = pack(++rows);
     keyH = 2 * H.keyPad + H.keyIcon + (rows - 1) * H.keyRowHeight;
-    const contentW = 2 * H.keyPad + cols * colW + (cols - 1) * H.keyColGap;
-    const kw = Math.max(contentW, Math.min(availW, width * 0.38));
-    key = { box: { x: width - H.keyInset - kw, y: H.keyInset, w: kw, h: keyH }, cols, rows, colW: (kw - 2 * H.keyPad - (cols - 1) * H.keyColGap) / cols, rowH: H.keyRowHeight, top: H.keyPad, entries };
+    const kw = Math.max(packed.w, Math.min(availW, width * 0.38));
+    const spare = (kw - packed.w) / Math.max(1, packed.cols.length - 1);
+    const slots: { x: number; row: number }[] = [];
+    let cx = H.keyPad;
+    const order: KeyEntry[] = [];
+    packed.cols.forEach((col, ci) => {
+      col.forEach((e, ri) => {
+        order.push(e);
+        slots.push({ x: cx, row: ri });
+      });
+      cx += packed.widths[ci] + H.keyColGap * 2 + (packed.cols.length > 1 ? spare : 0);
+    });
+    key = { box: { x: width - H.keyInset - kw, y: H.keyInset, w: kw, h: keyH }, rows, rowH: H.keyRowHeight, top: H.keyPad, entries: order, slots };
   }
   const h = Math.max(H.minHeight, textH, keyH + 2 * H.keyInset);
   if (key) {
@@ -367,6 +502,12 @@ function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], o
     h,
     logo,
     key,
+    eyebrow: input.header?.eyebrow,
+    titleWeight,
+    logoY: titleY - titleLH / 2 - (input.header?.eyebrow ? 44 : 24),
+    eyebrowY: titleY - titleLH / 2 - 12,
+    band: resolveColor(input.header?.band, H.band),
+    color: resolveColor(input.header?.color, H.text),
     titleLines,
     descLines,
     titleX: H.padX,
@@ -377,7 +518,8 @@ function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], o
   };
 }
 
-export function layoutDiagram(input: DiagramInput, opts: LayoutOptions = {}): Layout {
+export function layoutDiagram(input: DiagramInput, baseOpts: LayoutOptions = {}): Layout {
+  const opts: LayoutOptions = { ...baseOpts, classes: input.classes, lineColor: input.lineColor };
   const nodes = new Map<string, LNode>();
   const rootInput: NodeInput = {
     id: '__root',

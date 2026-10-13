@@ -76,17 +76,17 @@ class Builder {
     return id;
   }
 
-  private span(s: string, size: number, weight: Weight, color: string, align: string): string {
+  span(s: string, size: number, weight: Weight, color: string, align: string, italic = false): string {
     return (
       `<span style='text-align: ${align}; color: ${color}; font-size: ${pt(size)}pt; font-weight: ${weight >= 600 ? 'bold' : 'normal'}; ` +
-      `font-family: ${this.family}; vertical-align: middle;'>${esc(s)}</span>`
+      `${italic ? 'font-style: italic; ' : ''}font-family: ${this.family}; vertical-align: middle;'>${esc(s)}</span>`
     );
   }
 
   /** Text whose vertical centre sits at cy; same anchor semantics as render.ts. */
-  text(s: string, x: number, cy: number, size: number, weight: Weight, color: string, z: number, anchor: 'start' | 'middle' = 'start'): string | undefined {
+  text(s: string, x: number, cy: number, size: number, weight: Weight, color: string, z: number, anchor: 'start' | 'middle' = 'start', italic = false): string | undefined {
     if (!s) return undefined;
-    const w = measure(s, size, weight) * 1.15 + 2 * TEXT_PAD + 8;
+    const w = measure(s, size, weight, italic) * 1.15 + 2 * TEXT_PAD + 8;
     const h = Math.ceil(size * 1.7);
     const x0 = anchor === 'start' ? x - TEXT_PAD : x - w / 2;
     const id = this.id('txt');
@@ -94,7 +94,7 @@ class Builder {
       id,
       type: 'text',
       boundingBox: { x: r2(x0), y: r2(cy - h / 2), w: r2(w), h },
-      text: this.span(s, size, weight, color, anchor === 'start' ? 'left' : 'center'),
+      text: this.span(s, size, weight, color, anchor === 'start' ? 'left' : 'center', italic),
       zIndex: z,
     });
     return id;
@@ -155,7 +155,7 @@ function iconSvg(ic: ResolvedIcon): string {
 function drawHeader(b: Builder, l: Layout) {
   const h = l.header;
   const items: string[] = [];
-  items.push(b.rect('hdr', { x: 0, y: 0, w: l.width, h: h.h }, { fill: H.band, z: 0 }));
+  items.push(b.rect('hdr', { x: 0, y: 0, w: l.width, h: h.h }, { fill: h.band, z: 0 }));
 
   // White arc region: polygon approximating the SVG arc (circle radius R, bulging right to bulgeX).
   const R = Math.max(h.arcR, h.h / 2 + 1);
@@ -173,20 +173,33 @@ function drawHeader(b: Builder, l: Layout) {
   b.shapes.find((s) => s.id === arc)!.vertices = verts.map((v) => ({ x: r2(Math.min(1, Math.max(0, v.x / bw))), y: r2(v.y / h.h) }));
   items.push(arc);
 
-  if (h.logo) items.push(b.icon(h.logo, h.titleX + 22, h.titleY - (H.titleSize * 1.3) / 2 - 24, 34, 2));
-  h.titleLines.forEach((t, i) => items.push(b.text(t, h.titleX, h.titleY + i * H.titleSize * 1.3, H.titleSize, 400, H.text, 2)!));
-  h.descLines.forEach((t, i) => items.push(b.text(t, h.titleX, h.descY + i * H.descLineHeight, H.descSize, 400, H.text, 2)!));
+  if (h.logo) items.push(b.icon(h.logo, h.titleX + 22, h.logoY, 34, 2));
+  if (h.eyebrow) items.push(b.text(h.eyebrow.toUpperCase(), h.titleX, h.eyebrowY, 12, 700, h.color, 2)!);
+  h.titleLines.forEach((t, i) => items.push(b.text(t, h.titleX, h.titleY + i * H.titleSize * 1.3, H.titleSize, h.titleWeight, h.color, 2)!));
+  h.descLines.forEach((t, i) => items.push(b.text(t, h.titleX, h.descY + i * H.descLineHeight, H.descSize, 400, h.color, 2)!));
 
   if (h.key) {
     const k = h.key;
     items.push(b.rect('key', k.box, { fill: '#FFFFFF', rounding: 20, z: 2 }));
     k.entries.forEach((e, i) => {
-      const col = i % k.cols;
-      const row = Math.floor(i / k.cols);
-      const x = k.box.x + H.keyPad + col * (k.colW + H.keyColGap);
+      const row = k.slots[i].row;
+      const x = k.box.x + k.slots[i].x;
       const cy = k.box.y + k.top + H.keyIcon / 2 + row * k.rowH;
+      if (e.chip) {
+        const w = measure(e.label, H.keyLabelSize, 600) + 24;
+        items.push(
+          b.rect('chip', { x, y: cy - 10, w, h: 20 }, {
+            fill: e.chip.fill,
+            stroke: { color: e.chip.stroke, width: 2, style: 'solid' },
+            rounding: 8,
+            z: 3,
+            text: b.span(e.label, H.keyLabelSize, 600, e.chip.text, 'center'),
+          }),
+        );
+        return;
+      }
       items.push(keySymbol(b, e, x, cy));
-      const t = b.text(e.label, x + (e.icon ? H.keyIcon : 30) + 10, cy, H.keyLabelSize, 400, H.text, 3);
+      const t = b.text(e.label, x + (e.icon ? H.keyIcon : 30) + 10, cy, H.keyLabelSize, 400, h.color, 3);
       if (t) items.push(t);
     });
   }
@@ -211,11 +224,33 @@ function keySymbol(b: Builder, e: KeyEntry, x: number, cy: number): string {
   return lineShape(b, { x, y: cy }, { x: x + 30, y: cy }, resolveColor(e.color, X.color), X.width + 0.5, e.line ?? 'solid', 3);
 }
 
+function drawSymbol(b: Builder, n: LNode, z: number, cardIds: Map<string, string>) {
+  if (n.shape === 'note') {
+    const items = n.titleLines.map((t, i) => b.text(t, n.x + 2, n.y + 8 + i * 12.5, C.attrSize, 400, n.titleColor, z, 'start', true)!);
+    b.group(items, z);
+    return;
+  }
+  const decision = n.shape === 'decision';
+  const text = n.titleLines
+    .map((t) => b.span(t, decision ? X.decisionSize : 9.5, decision ? 400 : 700, n.titleColor, 'center', decision))
+    .join('<br>');
+  const id = b.rect(decision ? 'dec' : 'term', n, {
+    fill: n.fill,
+    stroke: { color: n.stroke, width: 2, style: 'solid' },
+    rounding: decision ? undefined : n.h,
+    z,
+    type: decision ? 'diamond' : 'rectangle',
+    text,
+  });
+  cardIds.set(n.id, id);
+}
+
 function drawNode(b: Builder, n: LNode, depth: number, cardIds: Map<string, string>) {
+  if (n.framed && n.shape !== 'card') return drawSymbol(b, n, depth * 4, cardIds);
   if (n.framed) {
     const z = depth * 4;
-    const stroke = resolveColor(n.input.color, C.border);
-    const fill = resolveColor(n.input.fill, C.fill);
+    const stroke = n.stroke;
+    const fill = n.fill;
     const bw = C.borderWidth;
     const items: string[] = [];
     const card = b.rect('card', n, { fill, stroke: { color: stroke, width: strokeW(bw), style: 'solid' }, rounding: 2 * C.radius, z });
@@ -224,7 +259,7 @@ function drawNode(b: Builder, n: LNode, depth: number, cardIds: Map<string, stri
     const zp = z + 1;
     if (n.icon) items.push(b.icon(n.icon, n.x + C.iconTop + C.icon / 2, n.y + C.iconTop + C.icon / 2, C.icon, zp));
     n.titleLines.forEach((t, i) => {
-      const id = b.text(t, n.x + n.textX, n.y + n.titleCenter + i * C.titleLineHeight, C.titleSize, 700, C.titleColor, zp);
+      const id = b.text(t, n.x + n.textX, n.y + n.titleCenter + i * C.titleLineHeight, C.titleSize, 700, n.titleColor, zp);
       if (id) items.push(id);
     });
     if (n.titleLines.length) {
@@ -232,9 +267,11 @@ function drawNode(b: Builder, n: LNode, depth: number, cardIds: Map<string, stri
       items.push(b.rect('rule', { x: x0, y: n.y + n.ruleY - C.ruleWidth / 2, w: n.x + n.w - bw / 2 - x0, h: C.ruleWidth }, { fill: C.ruleColor, z: zp }));
     }
     n.attrLines.forEach((t, i) => {
-      const id = b.text(t, n.x + n.textX, n.y + n.attrY + i * C.attrLineHeight, C.attrSize, 400, C.attrColor, zp);
+      const color = n.input.class ? n.titleColor : C.attrColor;
+      const id = b.text(t, n.x + n.textX + n.attrDX[i], n.y + n.attrY + n.attrDY[i], C.attrSize, 400, color, zp, 'start', n.italicAttrs);
       if (id) items.push(id);
     });
+    if (n.badge) items.push(b.icon(n.badge, n.x + n.w - 14, n.y + n.h - 14, 14, zp));
     let fy = n.y + n.footerY;
     if (n.input.footer) {
       items.push(b.rect('foot', { x: n.x + bw / 2, y: fy, w: n.w - bw, h: C.footerBandHeight }, { fill: C.footerBand, z: zp }));
@@ -265,8 +302,8 @@ function endpoint(cardIds: Map<string, string>, n: LNode, p: { x: number; y: num
   return { type: 'shapeEndpoint', style, shapeId, position: { x: rel(p.x, n.x, n.w), y: rel(p.y, n.y, n.h) } };
 }
 
-function drawRoute(b: Builder, r: Route, cardIds: Map<string, string>) {
-  const color = resolveColor(r.conn.color, X.color);
+function drawRoute(b: Builder, r: Route, cardIds: Map<string, string>, lineColor: string) {
+  const color = resolveColor(r.conn.color, lineColor);
   const arrow = r.conn.arrow ?? 'end';
   const P = r.points;
   const id = b.id('conn');
@@ -288,7 +325,7 @@ function drawRoute(b: Builder, r: Route, cardIds: Map<string, string>) {
       stroke: { color, width: strokeW(X.pillBorder), style: 'solid' },
       rounding: l.h,
       z: 2000,
-      text: `<span style='text-align: center; color: ${X.color}; font-size: ${pt(X.pillSize)}pt; font-weight: bold; font-family: ${loadFonts().family}; vertical-align: middle;'>${esc(l.text)}</span>`,
+      text: `<span style='text-align: center; color: ${r.conn.color ? color : X.color}; font-size: ${pt(X.pillSize)}pt; font-weight: bold; font-family: ${loadFonts().family}; vertical-align: middle;'>${esc(l.text)}</span>`,
     });
     items.push(pill);
   }
@@ -313,7 +350,9 @@ export async function exportLucid(layout: Layout): Promise<Buffer> {
   const routes = routeAll(layout);
   drawHeader(b, layout);
   for (const c of layout.root.children) drawNode(b, c, 0, cardIds);
-  for (const r of routes) drawRoute(b, r, cardIds);
+  // the decorative road behind snake flowcharts is not exported (no arcs in Standard Import)
+  const lineColor = resolveColor(layout.input.lineColor, X.color);
+  for (const r of routes) drawRoute(b, r, cardIds, lineColor);
 
   const doc = {
     version: 1,

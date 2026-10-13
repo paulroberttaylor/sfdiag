@@ -1,5 +1,5 @@
 import type { ConnectionInput } from './schema.js';
-import { ancestors, type Box, type Layout, type LNode } from './layout.js';
+import { ancestors, isSymbol, type Box, type Layout, type LNode } from './layout.js';
 import { measure } from './text.js';
 import { theme } from './theme.js';
 
@@ -131,7 +131,27 @@ function assignPorts(routes: Route[]): Map<Route, [number, number]> {
   const free = (k: string, pos: number) => (occupied.get(k) ?? []).every((q) => Math.abs(q - pos) >= minGap);
   const claim = (k: string, pos: number) => (occupied.get(k) ?? occupied.set(k, []).get(k)!).push(pos);
   // larger bundles first: they need the most room
+  // diamonds and pills connect at their points: the middle of each side
+  const mid = (n: LNode, s: Side) => (horizontalSide(s) ? n.y + n.h / 2 : n.x + n.w / 2);
+  for (const e of ends) {
+    if (!isSymbol(e.node)) continue;
+    e.pos = mid(e.node, e.side);
+    e.fixed = true;
+    claim(sideKey(e.node, e.side), e.pos);
+  }
+  for (const e of ends) {
+    if (e.fixed || !isSymbol(e.other)) continue;
+    const other = byRoute.get(e.route)!.find((x) => x !== e)!;
+    const opposite = { left: 'right', right: 'left', top: 'bottom', bottom: 'top' }[e.side];
+    const [lo, hi] = sideRange(e.node, e.side);
+    if (other.side === opposite && other.pos! >= lo && other.pos! <= hi && free(sideKey(e.node, e.side), other.pos!)) {
+      e.pos = other.pos;
+      e.fixed = true;
+      claim(sideKey(e.node, e.side), e.pos!);
+    }
+  }
   for (const rs of [...groups.values()].sort((a, b) => b.length - a.length)) {
+    if (rs.some((r) => isSymbol(r.from) || isSymbol(r.to))) continue;
     const r0 = rs[0];
     const [lo, hi] = overlap(...sideRange(r0.from, r0.fromSide), ...sideRange(r0.to, r0.toSide));
     const ideal = (i: number) => (rs.length === 1 ? (lo + hi) / 2 : lo + ((i + 1) * (hi - lo)) / (rs.length + 1));
@@ -288,6 +308,16 @@ function astar(start: Point, startDir: Point, goal: Point, goalDir: Point, obsta
   };
   const xs = addMid(xsRaw);
   const ys = addMid(ysRaw);
+  // merging near-equal coordinates may have nudged the endpoints: pin them exactly
+  const pin = (arr: number[], v: number) => {
+    let bi = 0;
+    for (let i = 1; i < arr.length; i++) if (Math.abs(arr[i] - v) < Math.abs(arr[bi] - v)) bi = i;
+    arr[bi] = v;
+  };
+  pin(xs, start.x);
+  pin(ys, start.y);
+  pin(xs, goal.x);
+  pin(ys, goal.y);
   const xi = new Map(xs.map((v, i) => [v, i]));
   const yi = new Map(ys.map((v, i) => [v, i]));
   const find = (arr: number[], m: Map<number, number>, v: number) => m.get(v) ?? arr.findIndex((q) => Math.abs(q - v) < 0.6);

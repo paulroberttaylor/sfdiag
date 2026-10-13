@@ -96,6 +96,12 @@ use the skill in another repository, copy the folder into that repo's `.claude/s
 
 ![Northwind retail](docs/images/northwind-retail.png)
 
+![Order of Execution](docs/images/order-of-execution.png)
+
+`examples/order-of-execution.yaml` recreates the Salesforce Platform *Order of Execution*
+flowchart: categories (`classes`), decision diamonds, YES/NO paths, a right-to-left middle
+row and the winding road.
+
 `examples/northwind-retail.yaml` was written by an LLM from a one-paragraph description
 using only the skill, with no validation errors and two render rounds.
 
@@ -145,5 +151,7 @@ Source map: `schema.ts` (format), `validate.ts` (errors and hints), `catalog.ts`
 (icons), `text.ts` (font metrics), `layout.ts` (boxes), `route.ts` (connectors and
 labels), `render.ts` (SVG), `png.ts` (resvg), `lucid.ts` (Lucid export), `cli.ts`.
 
-Scope for v1 is System Landscape and Solution Architecture diagrams. Capability maps,
-roadmaps, swimlane process flows and data models are not covered yet.
+Supported: System Landscape and Solution Architecture diagrams (Architects gallery style)
+and process flowcharts with decisions, categories and snake layouts (developer-docs style,
+see `examples/order-of-execution.yaml`). Capability maps, roadmaps, swimlanes and data
+models are not covered yet.

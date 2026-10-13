@@ -1,0 +1,251 @@
+# Recreation of the Salesforce Platform "Order of Execution Overview" flowchart
+# (developer.salesforce.com/docs/platform/data-models/guide/order-of-execution.html)
+title: Order of Execution Overview
+description: >-
+  When you save a record with an insert, update, or upsert statement, Salesforce performs
+  the following events in order. Before Salesforce executes these events on the server,
+  the browser runs JavaScript validation if the record contains any dependent picklist
+  fields. The validation limits each dependent picklist field to its available values.
+  No other validation occurs on the client side.
+logo: salesforce
+header:
+  band: "#413E73"
+  color: "#2E2B55"
+  eyebrow: Salesforce Platform
+  bold: true
+lineColor: "#3E3A72"
+road: "#FBF9C9"
+gap: 70
+classes:
+  execute: { label: Execute, fill: "#E0F3E0", color: "#67B4A0" }
+  calculate: { label: Calculate, fill: "#CFE4FF", color: "#78AFF0" }
+  load: { label: Load, fill: "#FBE5C0", color: "#E1A252" }
+  save: { label: Save/Commit, fill: "#F2F3F5", color: "#9D9EA0" }
+  validate: { label: Validate, fill: "#D1F6FF", color: "#6FC3D8" }
+keyLabels:
+  slds:custom_apps/indigo: Workflow
+  slds:flow_alt/indigo: Flow
+  slds:apex/indigo: Trigger
+  slds:entitlement/indigo: Entitlement rules
+  slds:hierarchy/indigo: Escalation rules
+  slds:reply/indigo: Auto-response rules
+  slds:assignment/indigo: Assignment rules
+  slds:refresh/indigo: Trigger order isn't guaranteed; use a trigger handler framework
+  slds:stop/indigo: Only if the record has a roll-up summary or cross-object workflow
+  slds:record/indigo: A DML from a process or flow sends that record through save
+nodes:
+  # ── Row 1: load, validate, before-save automation (left to right)
+  - id: row1
+    frame: none
+    align: center
+    children:
+      - { id: start, shape: pill, title: START }
+      - id: s1
+        class: load
+        title: 1. Loads the original record
+        bullets: true
+        width: 150
+        attributes: [Loads the original record from the database or initializes the record for an upsert statement]
+      - id: s2
+        class: load
+        title: 2. Loads the new record values
+        bullets: true
+        width: 150
+        attributes: [Loads the new record field values from the request and overwrites the old values]
+      - id: c1
+        frame: none
+        layout: column
+        align: center
+        gap: 40
+        children:
+          - { id: d1, shape: decision, title: Did the request come from a standard UI edit page? }
+          - { id: s2b, class: validate, width: 170, title: 2B. Salesforce validates only the foreign keys and restricted picklists }
+      - id: c2
+        frame: none
+        layout: column
+        gap: 30
+        children:
+          - id: s2a
+            class: validate
+            title: "2A. Runs system validation to check for:"
+            bullets: true
+            width: 230
+            attributes:
+              - Compliance with layout-specific rules
+              - Required values at the layout level and field-definition level
+              - Valid field formats
+              - Maximum field length
+          - id: s2c
+            class: validate
+            icon: slds:apex/#81A7B4
+            title: 2C. Before executing a trigger
+            bullets: true
+            width: 230
+            attributes: [Salesforce verifies that any custom foreign keys do not refer to the object itself]
+      - { id: d2, shape: decision, width: 150, title: "Were multi-line items created, or is the request from a User object on a standard UI edit page?" }
+      - id: c3
+        frame: none
+        layout: column
+        align: center
+        gap: 34
+        children:
+          - { id: s2d, class: validate, width: 170, title: 2D. Runs custom validation rules }
+          - { id: s3, class: execute, icon: slds:flow_alt/#76BBA9, width: 190, title: 3. Executes "before save" record-triggered flows }
+      - { id: s4, class: execute, icon: slds:apex/#76BBA9, badge: slds:refresh/indigo, width: 180, title: 4. Executes all before triggers }
+      - id: s5
+        class: validate
+        title: 5. Runs most system validation steps again
+        bullets: true
+        width: 210
+        attributes:
+          - Such as verifying that all required fields have a non-null value
+          - Runs any custom validation rules
+          - Does NOT run layout-specific rules if the request is from standard UI edit page
+
+  # ── Row 2: duplicates, save, after triggers, assignment / workflow (right to left)
+  - id: row2
+    frame: none
+    reverse: true
+    align: center
+    children:
+      - id: c4
+        frame: none
+        layout: column
+        align: center
+        gap: 34
+        children:
+          - { id: s6, class: execute, width: 190, title: 6. Executes duplicate rules }
+          - { id: d3, shape: decision, title: Duplicate record identified and uses block action? }
+      - id: c5
+        frame: none
+        layout: column
+        gap: 34
+        children:
+          - { id: s7, class: save, icon: slds:database/#9D9EA0, width: 200, title: 7. Saves the record to the database, footer: But doesn't commit yet }
+          - { id: notsaved, icon: slds:ban/red, color: "#B85363", width: 260, title: The record is NOT saved, bullets: true, attributes: [No further steps such as after triggers and workflow rules are taken] }
+      - { id: s8, class: execute, icon: slds:apex/#76BBA9, badge: slds:refresh/indigo, width: 170, title: 8. Executes all after triggers }
+      - { id: d4, shape: decision, title: Is this a recursive save? }
+      - id: c6
+        frame: none
+        layout: column
+        gap: 34
+        children:
+          - { id: s10, class: execute, icon: slds:reply/#76BBA9, width: 180, title: 10. Executes Auto-Response rules }
+          - { id: s9, class: execute, icon: slds:assignment/#76BBA9, width: 180, title: 9. Executes assignment rules }
+      - id: c7
+        frame: none
+        layout: column
+        gap: 34
+        children:
+          - { id: s11, class: execute, icon: slds:custom_apps/#76BBA9, width: 180, title: 11. Executes Workflow rules }
+          - { id: s12, class: execute, icon: slds:hierarchy/#76BBA9, width: 180, title: 12. Executes escalation rules }
+      - { id: d5, shape: decision, title: Are there any workflow field updates? }
+
+  # ── Row 3: workflow re-save, flows, roll-ups, sharing, commit (left to right)
+  - id: row3
+    frame: none
+    align: center
+    children:
+      - id: s11a
+        icon: slds:custom_apps/#443E6A
+        fill: "#EDEAFF"
+        color: "#443E6A"
+        width: 210
+        title: "11A. If there are workflow field updates:"
+        bullets: true
+        attributes:
+          - Updates the record again
+          - Runs system validations again
+          - Custom validation rules, flows, duplicate rules, processes built with Process Builder, and escalation rules are not run again
+          - Executes before update triggers and after update triggers, regardless of the record operation (insert or update), one more time (and only one more time)
+      - id: s13
+        class: execute
+        icon: slds:flow_alt/#76BBA9
+        badge: slds:record/indigo
+        width: 190
+        title: 13. Executes Flow automations in no particular order
+        bullets: true
+        attributes: [Processes built with Process Builder, Flows launched by processes, Flows launched by workflow rules]
+      - id: c8
+        frame: none
+        layout: column
+        align: center
+        gap: 34
+        children:
+          - { id: s14, class: execute, icon: slds:flow_alt/#76BBA9, width: 190, title: 14. Executes "after save" record-triggered flows }
+          - { id: s15, class: execute, icon: slds:entitlement/#76BBA9, width: 190, title: 15. Executes Entitlement rules }
+          - { id: d6, shape: decision, title: Does the record contain roll-up summary fields? }
+      - id: c9
+        frame: none
+        layout: column
+        gap: 40
+        children:
+          - { id: s18, class: execute, width: 190, title: 18. Executes criteria-based sharing rules }
+          - id: s16
+            class: calculate
+            badge: slds:stop/indigo
+            width: 190
+            title: 16. Calculates roll-up summary fields on parent records
+            bullets: true
+            attributes: [Parent record goes through save procedure]
+      - id: c10
+        frame: none
+        layout: column
+        gap: 40
+        children:
+          - { id: s19, class: save, icon: slds:database/#9D9EA0, width: 180, title: 19. Commits all DML operations to the database }
+          - id: s17
+            class: calculate
+            width: 180
+            title: 17. Calculates roll-up summary fields on grand-parent records
+            bullets: true
+            attributes: [Grandparent record goes through save procedure]
+      - id: s20
+        fill: "#EDEAFF"
+        color: "#443E6A"
+        width: 200
+        title: "20. Executes post-commit logic. For example:"
+        bullets: true
+        attributes:
+          - Sending email
+          - Executing enqueued asynchronous Apex jobs, including queueable jobs and future methods
+          - Asynchronous paths in record-triggered flows
+
+connections:
+  - { from: start, to: s1 }
+  - { from: s1, to: s2 }
+  - { from: s2, to: d1 }
+  - { from: d1, to: s2a, label: "YES", color: "#2E8B57", fromSide: top }
+  - { from: d1, to: s2b, label: "NO", color: "#C23934" }
+  - { from: s2b, to: s2c }
+  - { from: s2a, to: d2 }
+  - { from: s2c, to: d2, toSide: bottom }
+  - { from: d2, to: s2d, label: "YES", color: "#2E8B57", fromSide: top }
+  - { from: d2, to: s3, label: "NO", color: "#C23934" }
+  - { from: s2d, to: s3 }
+  - { from: s3, to: s4 }
+  - { from: s4, to: s5 }
+  - { from: s5, to: s6 }
+  - { from: s6, to: d3 }
+  - { from: d3, to: s7, label: "NO", color: "#C23934", fromSide: top }
+  - { from: d3, to: notsaved, label: "YES", color: "#2E8B57" }
+  - { from: s7, to: s8 }
+  - { from: s8, to: d4 }
+  - { from: d4, to: s9, label: "NO", color: "#C23934" }
+  - { from: d4, to: s18, label: "YES · skip 9–17", color: "#2E8B57", fromSide: bottom }
+  - { from: s9, to: s10 }
+  - { from: s10, to: s11 }
+  - { from: s11, to: d5 }
+  - { from: d5, to: s11a, label: "YES", color: "#2E8B57", fromSide: bottom }
+  - { from: d5, to: s12, label: "NO", color: "#C23934" }
+  - { from: s11a, to: s12 }
+  - { from: s12, to: s13 }
+  - { from: s13, to: s14 }
+  - { from: s14, to: s15 }
+  - { from: s15, to: d6 }
+  - { from: d6, to: s18, label: "NO", color: "#C23934" }
+  - { from: d6, to: s16, label: "YES", color: "#2E8B57", fromSide: bottom }
+  - { from: s16, to: s17 }
+  - { from: s17, to: s18 }
+  - { from: s18, to: s19 }
+  - { from: s19, to: s20 }

@@ -28,20 +28,21 @@ class Svg {
   }
 
   /** Text whose visual (cap-height) centre sits at cy. */
-  text(s: string, x: number, cy: number, size: number, weight: Weight, fill: string, anchor: 'start' | 'middle' | 'end' = 'start') {
+  text(s: string, x: number, cy: number, size: number, weight: Weight, fill: string, anchor: 'start' | 'middle' | 'end' = 'start', italic = false) {
     if (!s) return;
     const y = cy + baselineOffset(size, weight);
     let x0 = x;
     if (this.mode === 'paths') {
-      const w = measure(s, size, weight);
+      const w = measure(s, size, weight, italic);
       if (anchor === 'middle') x0 = x - w / 2;
       if (anchor === 'end') x0 = x - w;
-      this.push(`<path d="${textPath(s, x0, y, size, weight)}" fill="${fill}"><title>${esc(s)}</title></path>`);
+      this.push(`<path d="${textPath(s, x0, y, size, weight, italic)}" fill="${fill}"><title>${esc(s)}</title></path>`);
       return;
     }
     const a = anchor === 'start' ? '' : ` text-anchor="${anchor}"`;
     const fw = weight === 400 ? '' : ` font-weight="${weight}"`;
-    this.push(`<text x="${r2(x0)}" y="${r2(y)}" font-size="${size}"${fw}${a} fill="${fill}">${esc(s)}</text>`);
+    const fs = italic ? ' font-style="italic"' : '';
+    this.push(`<text x="${r2(x0)}" y="${r2(y)}" font-size="${size}"${fw}${fs}${a} fill="${fill}">${esc(s)}</text>`);
   }
 
   glyphRef(ic: ResolvedIcon): string {
@@ -76,35 +77,43 @@ class Svg {
   }
 }
 
-function fontFace(): string {
+function fontFace(svgBody: string): string {
   const fonts = loadFonts();
-  return ([400, 600, 700] as Weight[])
-    .map((w) => {
-      const b64 = fs.readFileSync(fonts.files[w]).toString('base64');
-      return `@font-face{font-family:'${fonts.family}';font-weight:${w};src:url(data:font/ttf;base64,${b64}) format('truetype');}`;
-    })
-    .join('');
+  const face = (file: string, w: number, style: string) =>
+    `@font-face{font-family:'${fonts.family}';font-weight:${w};font-style:${style};src:url(data:font/ttf;base64,${fs.readFileSync(file).toString('base64')}) format('truetype');}`;
+  const out = ([400, 600, 700] as Weight[]).map((w) => face(fonts.files[w], w, 'normal'));
+  // only embed italics when the drawing uses them
+  if (svgBody.includes('font-style="italic"')) {
+    for (const [w, f] of Object.entries(fonts.italicFiles)) if (f) out.push(face(f, Number(w), 'italic'));
+  }
+  return out.join('');
 }
 
 function drawHeader(svg: Svg, l: Layout) {
   const h = l.header;
-  svg.push(`<rect x="0" y="0" width="${l.width}" height="${r2(h.h)}" fill="${H.band}"/>`);
+  svg.push(`<rect x="0" y="0" width="${l.width}" height="${r2(h.h)}" fill="${h.band}"/>`);
   const R = Math.max(h.arcR, h.h / 2 + 1);
   const xTop = h.bulgeX - (R - Math.sqrt(R * R - (h.h / 2) ** 2));
   svg.push(`<path d="M0 0H${r2(xTop)}A${r2(R)} ${r2(R)} 0 0 1 ${r2(xTop)} ${r2(h.h)}V${r2(h.h + 1)}H0Z" fill="#FFFFFF"/>`);
-  if (h.logo) svg.icon(h.logo, h.titleX + 22, h.titleY - H.titleSize * 1.3 / 2 - 24, 34);
-  h.titleLines.forEach((t, i) => svg.text(t, h.titleX, h.titleY + i * H.titleSize * 1.3, H.titleSize, 400, H.text));
-  h.descLines.forEach((t, i) => svg.text(t, h.titleX, h.descY + i * H.descLineHeight, H.descSize, 400, H.text));
+  if (h.logo) svg.icon(h.logo, h.titleX + 22, h.logoY, 34);
+  if (h.eyebrow) svg.text(h.eyebrow.toUpperCase(), h.titleX, h.eyebrowY, 12, 700, h.color);
+  h.titleLines.forEach((t, i) => svg.text(t, h.titleX, h.titleY + i * H.titleSize * 1.3, H.titleSize, h.titleWeight, h.color));
+  h.descLines.forEach((t, i) => svg.text(t, h.titleX, h.descY + i * H.descLineHeight, H.descSize, 400, h.color));
   if (h.key) {
     const k = h.key;
     svg.push(`<rect x="${r2(k.box.x)}" y="${r2(k.box.y)}" width="${r2(k.box.w)}" height="${r2(k.box.h)}" rx="10" fill="#FFFFFF"/>`);
     k.entries.forEach((e, i) => {
-      const col = i % k.cols;
-      const row = Math.floor(i / k.cols);
-      const x = k.box.x + H.keyPad + col * (k.colW + H.keyColGap);
+      const row = k.slots[i].row;
+      const x = k.box.x + k.slots[i].x;
       const cy = k.box.y + k.top + H.keyIcon / 2 + row * k.rowH;
+      if (e.chip) {
+        const w = measure(e.label, H.keyLabelSize, 600) + 24;
+        svg.push(`<rect x="${r2(x)}" y="${r2(cy - 10)}" width="${r2(w)}" height="20" rx="4" fill="${e.chip.fill}" stroke="${e.chip.stroke}" stroke-width="1.5"/>`);
+        svg.text(e.label, x + w / 2, cy, H.keyLabelSize, 600, e.chip.text, 'middle');
+        return;
+      }
       drawKeySymbol(svg, e, x, cy);
-      svg.text(e.label, x + (e.icon ? H.keyIcon : 30) + 10, cy, H.keyLabelSize, 400, H.text);
+      svg.text(e.label, x + (e.icon ? H.keyIcon : 30) + 10, cy, H.keyLabelSize, 400, h.color);
     });
   }
 }
@@ -119,22 +128,51 @@ function drawKeySymbol(svg: Svg, e: KeyEntry, x: number, cy: number) {
   svg.push(`<line x1="${r2(x)}" y1="${r2(cy)}" x2="${r2(x + 30)}" y2="${r2(cy)}" stroke="${color}" stroke-width="${X.width + 0.5}"${dash}/>`);
 }
 
+function drawSymbol(svg: Svg, n: LNode) {
+  const cx = n.x + n.w / 2;
+  const cy = n.y + n.h / 2;
+  if (n.shape === 'decision') {
+    svg.push(
+      `<path d="M${r2(cx)} ${r2(n.y)}L${r2(n.x + n.w)} ${r2(cy)}L${r2(cx)} ${r2(n.y + n.h)}L${r2(n.x)} ${r2(cy)}Z" fill="${n.fill}" stroke="${n.stroke}" stroke-width="${C.borderWidth}" stroke-linejoin="round" filter="url(#sh)"/>`,
+    );
+    const lh = X.decisionLineHeight;
+    const top = cy - ((n.titleLines.length - 1) * lh) / 2;
+    n.titleLines.forEach((t, i) => svg.text(t, cx, top + i * lh, X.decisionSize, 400, n.titleColor, 'middle', true));
+  } else if (n.shape === 'pill') {
+    svg.push(`<rect x="${r2(n.x)}" y="${r2(n.y)}" width="${r2(n.w)}" height="${r2(n.h)}" rx="${r2(n.h / 2)}" fill="${n.fill}" stroke="${n.stroke}" stroke-width="2"/>`);
+    svg.text(n.titleLines[0], cx, cy, 9.5, 700, n.titleColor, 'middle');
+  } else {
+    n.titleLines.forEach((t, i) => svg.text(t, n.x + 2, n.y + 8 + i * 12.5, C.attrSize, 400, n.titleColor, 'start', true));
+  }
+}
+
 function drawNode(svg: Svg, n: LNode) {
+  if (n.framed && n.shape !== 'card') return drawSymbol(svg, n);
   if (n.framed) {
-    const stroke = resolveColor(n.input.color, C.border);
-    const fill = resolveColor(n.input.fill, C.fill);
+    const stroke = n.stroke;
+    const fill = n.fill;
     const bw = C.borderWidth;
     svg.push(
       `<rect x="${r2(n.x)}" y="${r2(n.y)}" width="${r2(n.w)}" height="${r2(n.h)}" rx="${C.radius}" fill="${fill}" stroke="${stroke}" stroke-width="${bw}" filter="url(#sh)"/>`,
     );
     if (n.icon) svg.icon(n.icon, n.x + C.iconTop + C.icon / 2, n.y + C.iconTop + C.icon / 2, n.icon.plain && !n.icon.custom ? C.icon * 0.62 : C.icon);
-    n.titleLines.forEach((t, i) => svg.text(t, n.x + n.textX, n.y + n.titleCenter + i * C.titleLineHeight, C.titleSize, 700, C.titleColor));
+    n.titleLines.forEach((t, i) => svg.text(t, n.x + n.textX, n.y + n.titleCenter + i * C.titleLineHeight, C.titleSize, 700, n.titleColor));
     if (n.titleLines.length) {
       svg.push(
         `<line x1="${r2(n.x + n.textX)}" y1="${r2(n.y + n.ruleY)}" x2="${r2(n.x + n.w - bw / 2)}" y2="${r2(n.y + n.ruleY)}" stroke="${C.ruleColor}" stroke-width="${C.ruleWidth}"/>`,
       );
     }
-    n.attrLines.forEach((t, i) => svg.text(t, n.x + n.textX, n.y + n.attrY + i * C.attrLineHeight, C.attrSize, 400, C.attrColor));
+    n.attrLines.forEach((t, i) =>
+      svg.text(t, n.x + n.textX + n.attrDX[i], n.y + n.attrY + n.attrDY[i], C.attrSize, 400, n.input.class ? n.titleColor : C.attrColor, 'start', n.italicAttrs),
+    );
+    if (n.badge) {
+      const d = 14;
+      const bx = n.x + n.w - d - 7;
+      const by = n.y + n.h - d - 7;
+      const id = svg.glyphRef(n.badge);
+      svg.push(`<rect x="${r2(bx)}" y="${r2(by)}" width="${d}" height="${d}" rx="3" fill="${n.badge.color}"/>`);
+      svg.push(`<use href="#${id}" x="${r2(bx + 2.5)}" y="${r2(by + 2.5)}" width="${d - 5}" height="${d - 5}" fill="#FFFFFF"/>`);
+    }
     let fy = n.y + n.footerY;
     if (n.input.footer) {
       svg.push(`<rect x="${r2(n.x + bw / 2)}" y="${r2(fy)}" width="${r2(n.w - bw)}" height="${C.footerBandHeight}" fill="${C.footerBand}"/>`);
@@ -166,8 +204,8 @@ function arrowHead(svg: Svg, tip: Point, from: Point, color: string) {
   svg.push(`<path d="M${r2(tip.x)} ${r2(tip.y)}L${r2(p1.x)} ${r2(p1.y)}L${r2(p2.x)} ${r2(p2.y)}Z" fill="${color}"/>`);
 }
 
-function drawRoute(svg: Svg, r: Route) {
-  const color = resolveColor(r.conn.color, X.color);
+function drawRoute(svg: Svg, r: Route, lineColor: string) {
+  const color = resolveColor(r.conn.color, lineColor);
   const arrow = r.conn.arrow ?? 'end';
   const pts = r.points.map((p) => ({ ...p }));
   const trim = (i: number, j: number) => {
@@ -187,14 +225,14 @@ function drawRoute(svg: Svg, r: Route) {
   if (arrow === 'start' || arrow === 'both') arrowHead(svg, P[0], P[1], color);
 }
 
-function drawLabels(svg: Svg, r: Route) {
-  const color = resolveColor(r.conn.color, X.color);
+function drawLabels(svg: Svg, r: Route, lineColor: string) {
+  const color = resolveColor(r.conn.color, lineColor);
   if (r.label) {
     const b = r.label;
     svg.push(
       `<rect x="${r2(b.x)}" y="${r2(b.y)}" width="${r2(b.w)}" height="${b.h}" rx="${b.h / 2}" fill="#FFFFFF" stroke="${color}" stroke-width="${X.pillBorder}"/>`,
     );
-    svg.text(b.text, b.x + b.w / 2, b.y + b.h / 2, X.pillSize, 700, X.color, 'middle');
+    svg.text(b.text, b.x + b.w / 2, b.y + b.h / 2, X.pillSize, 700, r.conn.color ? color : X.color, 'middle');
   }
   if (r.step) {
     svg.push(`<circle cx="${r2(r.step.x)}" cy="${r2(r.step.y)}" r="${X.stepSize / 2}" fill="${X.stepFill}"/>`);
@@ -202,21 +240,50 @@ function drawLabels(svg: Svg, r: Route) {
   }
 }
 
+/** A winding band behind the top-level rows, ending in an arrow (snake flowcharts). */
+function drawRoad(svg: Svg, l: Layout, color: string) {
+  const rows = l.root.children;
+  if (!rows.length) return;
+  const centers = rows.map((r) => r.y + r.h / 2);
+  const minH = Math.min(...rows.map((r) => r.h));
+  const T = Math.min(Math.max(minH * 0.5, 70), 150);
+  const left = theme.canvas.margin * 0.4;
+  const right = l.width - theme.canvas.margin * 0.4;
+  let d = `M${r2(left)} ${r2(centers[0])}`;
+  for (let i = 1; i < centers.length; i++) {
+    const r = (centers[i] - centers[i - 1]) / 2;
+    const goingRight = i % 2 === 1;
+    const x = goingRight ? right - r - T / 2 : left + r + T / 2;
+    d += `H${r2(x)}A${r2(r)} ${r2(r)} 0 0 ${goingRight ? 1 : 0} ${r2(x)} ${r2(centers[i])}`;
+  }
+  const endRight = centers.length % 2 === 1;
+  const endX = endRight ? right - T * 0.9 : left + T * 0.9;
+  d += `H${r2(endX)}`;
+  svg.push(`<path d="${d}" fill="none" stroke="${color}" stroke-width="${r2(T)}"/>`);
+  const y = centers[centers.length - 1];
+  const tip = endRight ? right : left;
+  const dir = endRight ? 1 : -1;
+  svg.push(`<path d="M${r2(endX - dir)} ${r2(y - T * 0.85)}L${r2(tip)} ${r2(y)}L${r2(endX - dir)} ${r2(y + T * 0.85)}Z" fill="${color}"/>`);
+}
+
 export function renderSvg(layout: Layout, opts: RenderOptions = {}): { svg: string; routes: Route[] } {
   const mode = opts.text ?? 'embed';
   const svg = new Svg(mode);
   const routes = routeAll(layout);
+  const lineColor = resolveColor(layout.input.lineColor, X.color);
   drawHeader(svg, layout);
+  if (layout.input.road) drawRoad(svg, layout, resolveColor(layout.input.road, '#FBF9C9'));
   for (const c of layout.root.children) drawNode(svg, c);
-  for (const r of routes) drawRoute(svg, r);
-  for (const r of routes) drawLabels(svg, r);
+  for (const r of routes) drawRoute(svg, r, lineColor);
+  for (const r of routes) drawLabels(svg, r, lineColor);
 
   const fonts = loadFonts();
   const W = layout.width;
   const Hh = layout.height;
   const title = esc(layout.input.title);
   const desc = layout.input.description ? `<desc>${esc(layout.input.description)}</desc>` : '';
-  const style = mode === 'embed' ? `<style>${fontFace()}</style>` : '';
+  const body = svg.parts.join('\n');
+  const style = mode === 'embed' ? `<style>${fontFace(body)}</style>` : '';
   const head =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${Hh}" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${title}" ` +
     `font-family="'${fonts.family}', 'Salesforce Sans', Arial, sans-serif">` +
@@ -224,5 +291,5 @@ export function renderSvg(layout: Layout, opts: RenderOptions = {}): { svg: stri
     `<filter id="sh" x="-5%" y="-5%" width="110%" height="115%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.2" flood-color="${C.shadow}" flood-opacity="${C.shadowOpacity}"/></filter>` +
     `${svg.defs()}</defs>` +
     `<rect width="${W}" height="${Hh}" fill="${theme.canvas.background}"/>`;
-  return { svg: `${head}${svg.parts.join('\n')}</svg>\n`, routes };
+  return { svg: `${head}${body}</svg>\n`, routes };
 }

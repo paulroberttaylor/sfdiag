@@ -26,6 +26,12 @@ export interface NodeInput {
   columns?: number;
   gap?: number;
   justify?: 'stretch' | 'start' | 'center' | 'space-between';
+  align?: 'stretch' | 'start' | 'center' | 'end';
+  reverse?: boolean;
+  shape?: 'card' | 'decision' | 'pill' | 'note';
+  class?: string;
+  bullets?: boolean;
+  badge?: string;
   width?: number;
   height?: number;
   children?: NodeInput[];
@@ -45,7 +51,16 @@ export const Node: z.ZodType<NodeInput> = z
     layout: z.enum(['row', 'column', 'grid']).optional().describe('How children are arranged. Default row.'),
     columns: z.number().int().min(1).max(12).optional().describe('Columns for grid layout.'),
     gap: z.number().min(0).max(400).optional().describe('Space between children in px.'),
-    justify: z.enum(['stretch', 'start', 'center', 'space-between']).optional(),
+    justify: z.enum(['stretch', 'start', 'center', 'space-between']).optional().describe('Distribution of spare room along the layout axis.'),
+    align: z.enum(['stretch', 'start', 'center', 'end']).optional().describe('Cross-axis alignment of children. Default stretch; use center for flowcharts.'),
+    reverse: z.boolean().optional().describe('Row runs right-to-left (snake layouts): list children in flow order.'),
+    shape: z
+      .enum(['card', 'decision', 'pill', 'note'])
+      .optional()
+      .describe('card (default) | decision (diamond with a question) | pill (START/END terminal) | note (free italic text).'),
+    class: z.string().optional().describe('Name from the top-level `classes` map: colours the node and adds a key chip.'),
+    bullets: z.boolean().optional().describe('Show attributes as an italic bulleted list (long items wrap).'),
+    badge: z.string().optional().describe('Small icon in the bottom-right corner (explain it in the key).'),
     width: z.number().min(40).max(4000).optional().describe('Minimum width in px.'),
     height: z.number().min(30).max(4000).optional().describe('Minimum height in px.'),
     get children() {
@@ -77,6 +92,15 @@ export const KeyItem = z
   })
   .strict();
 
+export const NodeClass = z
+  .object({
+    label: z.string().optional().describe('Key label; defaults to the class name.'),
+    fill: Color.optional(),
+    color: Color.optional().describe('Border colour.'),
+    text: Color.optional().describe('Title colour.'),
+  })
+  .strict();
+
 export const Diagram = z
   .object({
     title: z.string().describe('Diagram title shown in the header.'),
@@ -94,6 +118,18 @@ export const Diagram = z
     columns: z.number().int().min(1).max(12).optional(),
     gap: z.number().min(0).max(400).optional(),
     width: z.number().min(400).max(8000).optional().describe('Minimum canvas width.'),
+    classes: z.record(z.string(), NodeClass).optional().describe('Named node categories (e.g. execute, validate), shown as chips in the key.'),
+    header: z
+      .object({
+        band: Color.optional().describe('Header band colour (default light grey).'),
+        color: Color.optional().describe('Title and description colour.'),
+        eyebrow: z.string().optional().describe('Small uppercase line above the title.'),
+        bold: z.boolean().optional().describe('Bold title (developer-docs style) instead of the light Architects style.'),
+      })
+      .strict()
+      .optional(),
+    lineColor: Color.optional().describe('Default connector colour.'),
+    road: Color.optional().describe('Draws a winding road behind top-level rows (snake flowcharts), e.g. "#FBF9C9".'),
     nodes: z.array(Node).min(1),
     connections: z.array(Connection).optional(),
   })

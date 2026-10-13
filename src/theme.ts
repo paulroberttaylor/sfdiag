@@ -98,6 +98,8 @@ export const theme = {
     stepFill: '#032D60',
     clearance: 14, // min distance kept between a routed line and a card
     labelGap: 24, // space either side of a pill inside a gap
+    decisionSize: 9.5,
+    decisionLineHeight: 12.5,
   },
 } as const;
 

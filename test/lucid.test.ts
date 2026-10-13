@@ -57,7 +57,7 @@ describe('lucid export', () => {
 
       let framed = 0;
       const walk = (n: any) => {
-        if (n.framed) framed++;
+        if (n.framed && n.shape === 'card') framed++;
         n.children.forEach(walk);
       };
       layout.root.children.forEach(walk);

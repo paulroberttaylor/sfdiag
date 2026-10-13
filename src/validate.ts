@@ -64,7 +64,7 @@ export function validateSource(src: string, opts: { iconDirs?: string[] } = {}):
       const p = pathString(iss.path);
       let hint: string | undefined;
       if (iss.code === 'unrecognized_keys') {
-        const known = ['id', 'title', 'icon', 'attributes', 'footer', 'footerIcons', 'color', 'fill', 'frame', 'layout', 'columns', 'gap', 'justify', 'width', 'height', 'children', 'from', 'to', 'label', 'style', 'arrow', 'step', 'fromSide', 'toSide', 'description', 'logo', 'key', 'keyLabels', 'nodes', 'connections'];
+        const known = ['shape', 'class', 'bullets', 'badge', 'align', 'reverse', 'classes', 'header', 'lineColor', 'road', 'eyebrow', 'band', 'id', 'title', 'icon', 'attributes', 'footer', 'footerIcons', 'color', 'fill', 'frame', 'layout', 'columns', 'gap', 'justify', 'width', 'height', 'children', 'from', 'to', 'label', 'style', 'arrow', 'step', 'fromSide', 'toSide', 'description', 'logo', 'key', 'keyLabels', 'nodes', 'connections'];
         hint = iss.keys.map((k) => `"${k}"${suggest(k, known, 1).length ? ` → did you mean "${suggest(k, known, 1)[0]}"?` : ' is not allowed'}`).join('; ');
       }
       errors.push({ path: p, message: iss.message, hint, line: lineOf(doc, lc, iss.path) });
@@ -93,6 +93,12 @@ export function validateSource(src: string, opts: { iconDirs?: string[] } = {}):
       else ids.set(n.id, pathString(p));
       if (n.frame !== 'none' && !n.title) errors.push({ path: pathString(p), message: `card "${n.id}" needs a title`, hint: 'add title, or set frame: none for an invisible layout group', line: lineOf(doc, lc, p) });
       if (n.icon) checkIcon(n.icon, [...p, 'icon']);
+      if (n.badge) checkIcon(n.badge, [...p, 'badge']);
+      if (n.class && !d.classes?.[n.class]) {
+        const s = suggest(n.class, Object.keys(d.classes ?? {}));
+        errors.push({ path: pathString([...p, 'class']), message: `unknown class "${n.class}"`, hint: s.length ? `did you mean "${s[0]}"?` : 'define it under the top-level `classes:` map', line: lineOf(doc, lc, [...p, 'class']) });
+      }
+      if (n.shape && n.shape !== 'card' && n.children?.length) errors.push({ path: pathString(p), message: `a ${n.shape} cannot have children`, line: lineOf(doc, lc, p) });
       n.footerIcons?.forEach((f, j) => checkIcon(f, [...p, 'footerIcons', j]));
       if (n.layout === 'grid' && !n.columns) warnings.push({ path: pathString(p), message: 'grid without columns; defaulting to a square grid' });
       if (n.frame === 'none' && (n.icon || n.attributes || n.footer)) warnings.push({ path: pathString(p), message: 'icon/attributes/footer are ignored on frame: none groups' });
