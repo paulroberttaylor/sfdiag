@@ -227,8 +227,8 @@ connections:
   - { from: s4, to: s5 }
   - { from: s5, to: s6 }
   - { from: s6, to: d3 }
-  - { from: d3, to: s7, label: "NO", color: "#C23934", fromSide: top }
-  - { from: d3, to: notsaved, label: "YES", color: "#2E8B57" }
+  - { from: d3, to: s7, label: "NO", color: "#C23934", fromSide: left }
+  - { from: d3, to: notsaved, label: "YES", color: "#2E8B57", fromSide: bottom }
   - { from: s7, to: s8 }
   - { from: s8, to: d4 }
   - { from: d4, to: s9, label: "NO", color: "#C23934" }
