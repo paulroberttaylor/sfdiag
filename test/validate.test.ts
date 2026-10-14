@@ -31,3 +31,8 @@ describe('validate', () => {
     expect(r.errors.map((e) => e.message)).toEqual(['duplicate id "a"', 'card "a" needs a title']);
   });
 });
+
+it('rejects alignWith pointing at an unknown node', () => {
+  const r = validateSource('title: T\nnodes:\n  - { id: a, title: A, alignWith: bb }\n  - { id: b, title: B }\n');
+  expect(r.errors.some((e) => e.message.includes('alignWith unknown node "bb"'))).toBe(true);
+});

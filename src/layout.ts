@@ -471,6 +471,35 @@ function place(n: LNode, x: number, y: number, w: number, h: number, isRoot = fa
   });
 }
 
+function shift(n: LNode, dx: number, dy: number): void {
+  n.x += dx;
+  n.y += dy;
+  for (const c of n.children) shift(c, dx, dy);
+}
+
+/**
+ * `alignWith`: move a node across its parent's flow (up/down in a row, sideways in a
+ * column) so its centre lines up with another node's, staying inside the parent.
+ */
+function alignNodes(root: LNode, nodes: Map<string, LNode>): void {
+  const visit = (n: LNode) => {
+    for (const c of n.children) {
+      const t = c.input.alignWith ? nodes.get(c.input.alignWith) : undefined;
+      if (t && !ancestors(t).includes(c)) {
+        const row = (n.input.layout ?? (n === root ? 'column' : 'row')) === 'row';
+        const lo = row ? n.y + (n.framed ? n.bodyY : 0) : n.x + (n.framed ? n.bodyX : 0);
+        const hi = row ? n.y + n.h : n.x + n.w;
+        const [pos, size, want] = row ? [c.y, c.h, t.y + t.h / 2] : [c.x, c.w, t.x + t.w / 2];
+        const to = Math.min(Math.max(want - size / 2, lo), hi - size);
+        if (row) shift(c, 0, to - pos);
+        else shift(c, to - pos, 0);
+      }
+      visit(c);
+    }
+  };
+  visit(root);
+}
+
 /** Length of a key line sample: long enough to show its dash pattern and arrowheads. */
 export function keyLineW(e: KeyEntry): number {
   return e.arrow && e.arrow !== 'none' ? 72 : 48;
@@ -745,6 +774,7 @@ export function layoutDiagram(input: DiagramInput, baseOpts: LayoutOptions = {})
   const header = layoutHeader(input, width, entries, opts);
   const top = header.h + theme.canvas.headerGap;
   place(root, m, top, width - 2 * m, root.nh, true);
+  alignNodes(root, nodes);
   const height = Math.ceil(top + root.nh + m + 8);
   return { width, height, header, root, nodes, connections: edges, input };
 }

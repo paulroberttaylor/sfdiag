@@ -82,7 +82,7 @@ nodes:
             bullets: true
             width: 230
             attributes: [Salesforce verifies that any custom foreign keys do not refer to the object itself]
-      - { id: d2, shape: decision, width: 150, title: "Were multi-line items created, or is the request from a User object on a standard UI edit page?" }
+      - { id: d2, shape: decision, width: 150, alignWith: s2a, title: "Were multi-line items created, or is the request from a User object on a standard UI edit page?" }
       - id: c3
         frame: none
         layout: column
@@ -108,7 +108,7 @@ nodes:
     reverse: true
     align: center
     children:
-      - { id: s6, class: execute, width: 190, title: 6. Executes duplicate rules }
+      - { id: s6, class: execute, width: 190, alignWith: s7, title: 6. Executes duplicate rules }
       - { id: d3, shape: decision, title: Duplicate record identified and uses block action? }
       - id: c5
         frame: none
@@ -133,7 +133,7 @@ nodes:
         children:
           - { id: s11, class: execute, icon: slds:custom_apps/#76BBA9, width: 180, title: 11. Executes Workflow rules }
           - { id: s12, class: execute, icon: slds:hierarchy/#76BBA9, width: 180, title: 12. Executes escalation rules }
-      - { id: d5, shape: decision, title: Are there any workflow field updates? }
+      - { id: d5, shape: decision, alignWith: s11, title: Are there any workflow field updates? }
 
   # ── Row 3: workflow re-save, flows, roll-ups, sharing, commit (left to right)
   - id: row3
@@ -220,7 +220,7 @@ connections:
   - { from: s3, to: s4 }
   - { from: s4, to: s5 }
   - { from: s5, to: s6 }
-  - { from: s6, to: d3 }
+  - { from: s6, to: d3, fromSide: bottom, toSide: right }
   - { from: d3, to: s7, label: "NO", color: "#C23934", fromSide: top }
   - { from: d3, to: notsaved, label: "YES", color: "#2E8B57", fromSide: bottom }
   - { from: s7, to: s8 }
@@ -230,9 +230,9 @@ connections:
   - { from: s9, to: s10 }
   - { from: s10, to: s11 }
   - { from: s11, to: d5 }
-  - { from: d5, to: s11a, label: "YES", color: "#2E8B57", fromSide: bottom }
-  - { from: d5, to: s12, label: "NO", color: "#C23934" }
-  - { from: s11a, to: s12 }
+  - { from: d5, to: s11a, label: "YES", color: "#2E8B57", fromSide: left, toSide: top }
+  - { from: d5, to: s12, label: "NO", color: "#C23934", fromSide: bottom, toSide: left }
+  - { from: s11a, to: s12, fromSide: top, toSide: left }
   - { from: s12, to: s13 }
   - { from: s13, to: s14 }
   - { from: s14, to: s15 }

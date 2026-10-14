@@ -73,3 +73,11 @@ it('a decision branches down to side cards from its left and right points', () =
   expect([side('approve').fromSide, side('approve').toSide]).toEqual(['left', 'top']);
   expect([side('reject').fromSide, side('reject').toSide]).toEqual(['right', 'top']);
 });
+
+it('alignWith lines a node up with another so the branch between them runs straight', () => {
+  const { layout, routes } = compileExample('order-of-execution.yaml');
+  const c = (id: string) => { const n = layout.nodes.get(id)!; return n.y + n.h / 2; };
+  expect(Math.abs(c('d5') - c('s11'))).toBeLessThan(1);
+  expect(Math.abs(c('s6') - c('s7'))).toBeLessThan(1);
+  expect(routes.find((r) => r.conn.from === 's11' && r.conn.to === 'd5')!.points).toHaveLength(2);
+});

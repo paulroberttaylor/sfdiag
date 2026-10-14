@@ -141,6 +141,17 @@ export function validateSource(src: string, opts: { iconDirs?: string[] } = {}):
   const parentOf = new Map<string, string | undefined>();
   const mapParents = (nodes: NodeInput[], parent?: string) => nodes.forEach((n) => (parentOf.set(n.id, parent), n.children && mapParents(n.children, n.id)));
   mapParents(d.nodes ?? []);
+  const checkAlign = (nodes: NodeInput[], base: (string | number)[]) =>
+    nodes.forEach((n, i) => {
+      const p = [...base, i];
+      if (n.alignWith && !ids.has(n.alignWith)) {
+        const s = suggest(n.alignWith, [...ids.keys()]);
+        errors.push({ path: pathString([...p, 'alignWith']), message: `alignWith unknown node "${n.alignWith}"`, hint: s.length ? `did you mean "${s[0]}"?` : undefined, line: lineOf(doc, lc, [...p, 'alignWith']) });
+      }
+      if (n.alignWith === n.id) errors.push({ path: pathString([...p, 'alignWith']), message: 'a node cannot align with itself', line: lineOf(doc, lc, [...p, 'alignWith']) });
+      if (n.children) checkAlign(n.children, [...p, 'children']);
+    });
+  checkAlign(d.nodes ?? [], ['nodes']);
   (d.connections ?? []).forEach((c, i) => {
     for (const end of ['from', 'to'] as const) {
       if (!ids.has(c[end])) {

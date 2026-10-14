@@ -39,6 +39,7 @@ export interface NodeInput {
   badge?: string;
   width?: number;
   height?: number;
+  alignWith?: string;
   children?: NodeInput[];
 }
 
@@ -79,6 +80,7 @@ export const Node: z.ZodType<NodeInput> = z
     badge: z.string().optional().describe('Small icon in the bottom-right corner (explain it in the key).'),
     width: z.number().min(40).max(4000).optional().describe('Minimum width in px.'),
     height: z.number().min(30).max(4000).optional().describe('Minimum height in px.'),
+    alignWith: Id.optional().describe('Line this node up with another node (same centre across the parent row/column), e.g. a decision level with the card its branch runs into.'),
     get children() {
       return z.array(Node).optional().describe('Nested cards. A node with children is a container.');
     },
