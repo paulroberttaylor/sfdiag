@@ -54,6 +54,8 @@ export interface LNode extends Box {
   blockH: number;
   /** gaps between consecutive children (row/column) or uniform gap (grid) */
   gaps: number[];
+  /** extra room above/below a frameless row for `alignWith` moves */
+  alignPad: [number, number];
 }
 
 export interface KeyEntry {
@@ -113,6 +115,8 @@ export interface LayoutOptions {
   lineColor?: string;
   iconStyle?: 'circle' | 'plain';
   cardWidth?: number;
+  /** extra room above/below frameless rows, found by a first pass so `alignWith` moves fit */
+  alignPads?: Map<string, [number, number]>;
 }
 
 /** Shapes that are not cards: fixed geometry, centred connection points, never stretched. */
@@ -173,6 +177,7 @@ function build(input: NodeInput, parent: LNode | undefined, nodes: Map<string, L
     blockW: 0,
     blockH: 0,
     gaps: [],
+    alignPad: opts.alignPads?.get(input.id) ?? [0, 0],
     x: 0,
     y: 0,
     w: 0,
@@ -330,7 +335,7 @@ function measureNode(n: LNode, edges: ConnectionInput[], nodes: Map<string, LNod
 
   if (!n.framed) {
     n.nw = Math.max(bw, inp.width ?? 0);
-    n.nh = Math.max(bh, inp.height ?? 0);
+    n.nh = Math.max(bh + n.alignPad[0] + n.alignPad[1], inp.height ?? 0);
     return;
   }
 
@@ -407,10 +412,10 @@ function place(n: LNode, x: number, y: number, w: number, h: number, isRoot = fa
   let justify = inp.justify ?? (layoutKind === 'column' ? 'start' : kidsAreLeaves(n) ? 'stretch' : 'space-between');
   if (justify === 'space-between' && n.children.length === 1) justify = 'stretch';
   const bx = x + n.bodyX;
-  const by = y + n.bodyY;
+  const by = y + n.bodyY + (n.framed ? 0 : n.alignPad[0]);
   const bw = n.framed ? w - n.bodyX - K.pad : w;
   // a stretched container passes its extra height on to its children block
-  const bh = n.framed ? n.blockH + Math.max(0, h - n.nh) : h;
+  const bh = n.framed ? n.blockH + Math.max(0, h - n.nh) : h - n.alignPad[0] - n.alignPad[1];
   const kids = inp.reverse ? [...n.children].reverse() : n.children;
   const align = inp.align ?? 'stretch';
   // cross-axis placement of one child within `span` starting at `start`
@@ -478,26 +483,39 @@ function shift(n: LNode, dx: number, dy: number): void {
 }
 
 /**
- * `alignWith`: move a node across its parent's flow (up/down in a row, sideways in a
- * column) so its centre lines up with another node's, staying inside the parent.
+ * `alignWith`: line a node's centre up with another node's across the nearest enclosing
+ * row (vertically). A node inside a column moves its whole column group, so a step in a
+ * stack can be levelled with a neighbour. With no enclosing row, it lines up sideways in
+ * its column. Moves stay inside the parent; later alignments see earlier moves.
  */
-function alignNodes(root: LNode, nodes: Map<string, LNode>): void {
-  const visit = (n: LNode) => {
-    for (const c of n.children) {
-      const t = c.input.alignWith ? nodes.get(c.input.alignWith) : undefined;
-      if (t && !ancestors(t).includes(c)) {
-        const row = (n.input.layout ?? (n === root ? 'column' : 'row')) === 'row';
-        const lo = row ? n.y + (n.framed ? n.bodyY : 0) : n.x + (n.framed ? n.bodyX : 0);
-        const hi = row ? n.y + n.h : n.x + n.w;
-        const [pos, size, want] = row ? [c.y, c.h, t.y + t.h / 2] : [c.x, c.w, t.x + t.w / 2];
-        const to = Math.min(Math.max(want - size / 2, lo), hi - size);
-        if (row) shift(c, 0, to - pos);
-        else shift(c, to - pos, 0);
-      }
-      visit(c);
+function alignNodes(root: LNode, nodes: Map<string, LNode>): Map<string, [number, number]> {
+  const short = new Map<string, [number, number]>();
+  const kind = (n: LNode) => n.input.layout ?? (n === root ? 'column' : 'row');
+  const align = (c: LNode, t: LNode) => {
+    let mover = c;
+    while (mover.parent && kind(mover.parent) !== 'row') mover = mover.parent;
+    const row = !!mover.parent;
+    if (!row) mover = c;
+    const p = mover.parent;
+    if (!p || ancestors(t).includes(mover) || t === mover) return;
+    const lo = row ? p.y + (p.framed ? p.bodyY : 0) : p.x + (p.framed ? p.bodyX : 0);
+    const hi = row ? p.y + p.h : p.x + p.w;
+    const d = row ? t.y + t.h / 2 - (c.y + c.h / 2) : t.x + t.w / 2 - (c.x + c.w / 2);
+    const [pos, size] = row ? [mover.y, mover.h] : [mover.x, mover.w];
+    const to = Math.min(Math.max(pos + d, lo), hi - size);
+    // a frameless row that is too short records the room it needs for the next pass
+    if (row && !p.framed && Math.abs(to - (pos + d)) > 0.5) {
+      const r = short.get(p.id) ?? [0, 0];
+      if (pos + d < lo) r[0] = Math.max(r[0], lo - (pos + d));
+      else r[1] = Math.max(r[1], pos + d + size - hi);
+      short.set(p.id, r);
     }
+    if (row) shift(mover, 0, to - pos);
+    else shift(mover, to - pos, 0);
   };
-  visit(root);
+  const all = [...nodes.values()].filter((n) => n.input.alignWith && nodes.get(n.input.alignWith!));
+  for (const n of all) align(n, nodes.get(n.input.alignWith!)!);
+  return short;
 }
 
 /** Length of a key line sample: long enough to show its dash pattern and arrowheads. */
@@ -742,6 +760,20 @@ function layoutRoadmap(
 }
 
 export function layoutDiagram(input: DiagramInput, baseOpts: LayoutOptions = {}): Layout {
+  // alignWith can need more room than a row's natural height: lay out, note the shortfall
+  // per row, and lay out again with that room added (a couple of rounds settles it)
+  const pads = new Map<string, [number, number]>();
+  for (let round = 0; ; round++) {
+    const { layout, short } = layoutOnce(input, { ...baseOpts, alignPads: pads });
+    if (!short.size || round >= 3) return layout;
+    for (const [id, [t, b]] of short) {
+      const cur = pads.get(id) ?? [0, 0];
+      pads.set(id, [cur[0] + Math.ceil(t), cur[1] + Math.ceil(b)]);
+    }
+  }
+}
+
+function layoutOnce(input: DiagramInput, baseOpts: LayoutOptions): { layout: Layout; short: Map<string, [number, number]> } {
   const opts: LayoutOptions = {
     ...baseOpts,
     classes: input.classes,
@@ -764,7 +796,7 @@ export function layoutDiagram(input: DiagramInput, baseOpts: LayoutOptions = {})
   const root = build(rootInput, undefined, nodes, opts);
   nodes.delete('__root');
   const edges = input.connections ?? [];
-  if (input.timeline) return layoutRoadmap(input, opts, root, nodes, edges, timelineItems);
+  if (input.timeline) return { layout: layoutRoadmap(input, opts, root, nodes, edges, timelineItems), short: new Map() };
   measureNode(root, edges, nodes, true);
 
   const m = theme.canvas.margin;
@@ -774,7 +806,7 @@ export function layoutDiagram(input: DiagramInput, baseOpts: LayoutOptions = {})
   const header = layoutHeader(input, width, entries, opts);
   const top = header.h + theme.canvas.headerGap;
   place(root, m, top, width - 2 * m, root.nh, true);
-  alignNodes(root, nodes);
+  const short = alignNodes(root, nodes);
   const height = Math.ceil(top + root.nh + m + 8);
-  return { width, height, header, root, nodes, connections: edges, input };
+  return { layout: { width, height, header, root, nodes, connections: edges, input }, short };
 }

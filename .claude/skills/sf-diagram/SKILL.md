@@ -135,9 +135,9 @@ connections:
 - `shape: decision | pill | note` — diamonds/terminals connect at their points. A
   decision branching down to cards on either side automatically leaves from its left
   and right points and turns down into each card; no `fromSide`/`toSide` needed.
-- `alignWith: <id>` lines a node up with another node across its parent's flow (same
-  vertical centre in a row, same horizontal centre in a column), e.g. a decision level
-  with the card its branch runs into, so the line between them is straight.
+- `alignWith: <id>` lines a node's vertical centre up with another node's, e.g. a decision
+  level with the card its branch runs into, so the line between them is straight. A node
+  inside a column moves its whole column; the row grows if it needs room.
 - `badge: <icon>` puts a small icon in a card's corner; badges and `keyLabels`
   icon entries appear in the key.
 - Put long-running rows in top-level `frame: none` rows; alternate `reverse: true` for a

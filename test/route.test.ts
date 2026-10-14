@@ -79,5 +79,9 @@ it('alignWith lines a node up with another so the branch between them runs strai
   const c = (id: string) => { const n = layout.nodes.get(id)!; return n.y + n.h / 2; };
   expect(Math.abs(c('d5') - c('s11'))).toBeLessThan(1);
   expect(Math.abs(c('s6') - c('s7'))).toBeLessThan(1);
+  // inside a column: the whole column moves, and the row grows to make room
+  expect(Math.abs(c('s3') - c('d2'))).toBeLessThan(1);
+  expect(Math.abs(c('s18') - c('d6'))).toBeLessThan(1);
+  expect(routes.find((r) => r.conn.from === 'd6' && r.conn.to === 's18')!.points).toHaveLength(2);
   expect(routes.find((r) => r.conn.from === 's11' && r.conn.to === 'd5')!.points).toHaveLength(2);
 });

@@ -39,15 +39,17 @@ nodes:
     frame: none
     align: center
     children:
-      - { id: start, shape: pill, title: START }
+      - { id: start, shape: pill, alignWith: d1, title: START }
       - id: s1
         class: load
+        alignWith: d1
         title: 1. Loads the original record
         bullets: true
         width: 150
         attributes: [Loads the original record from the database or initializes the record for an upsert statement]
       - id: s2
         class: load
+        alignWith: d1
         title: 2. Loads the new record values
         bullets: true
         width: 150
@@ -90,8 +92,8 @@ nodes:
         gap: 34
         children:
           - { id: s2d, class: validate, width: 170, title: 2D. Runs custom validation rules }
-          - { id: s3, class: execute, icon: slds:flow_alt/#76BBA9, width: 190, title: 3. Executes "before save" record-triggered flows }
-      - { id: s4, class: execute, icon: slds:apex/#76BBA9, badge: slds:refresh/indigo, width: 180, title: 4. Executes all before triggers }
+          - { id: s3, class: execute, alignWith: d2, icon: slds:flow_alt/#76BBA9, width: 190, title: 3. Executes "before save" record-triggered flows }
+      - { id: s4, class: execute, alignWith: s3, icon: slds:apex/#76BBA9, badge: slds:refresh/indigo, width: 180, title: 4. Executes all before triggers }
       - id: s5
         class: validate
         title: 5. Runs most system validation steps again
@@ -117,8 +119,8 @@ nodes:
         children:
           - { id: s7, class: save, icon: slds:database/#9D9EA0, width: 200, title: 7. Saves the record to the database, footer: But doesn't commit yet }
           - { id: notsaved, icon: slds:ban/red, color: "#B85363", width: 260, title: The record is NOT saved, bullets: true, attributes: [No further steps such as after triggers and workflow rules are taken] }
-      - { id: s8, class: execute, icon: slds:apex/#76BBA9, badge: slds:refresh/indigo, width: 170, title: 8. Executes all after triggers }
-      - { id: d4, shape: decision, title: Is this a recursive save? }
+      - { id: s8, class: execute, alignWith: s7, icon: slds:apex/#76BBA9, badge: slds:refresh/indigo, width: 170, title: 8. Executes all after triggers }
+      - { id: d4, shape: decision, alignWith: s9, title: Is this a recursive save? }
       - id: c6
         frame: none
         layout: column
@@ -138,7 +140,7 @@ nodes:
   # ── Row 3: workflow re-save, flows, roll-ups, sharing, commit (left to right)
   - id: row3
     frame: none
-    align: center
+    align: start
     children:
       - id: s11a
         icon: slds:custom_apps/#443E6A
@@ -174,7 +176,7 @@ nodes:
         layout: column
         gap: 40
         children:
-          - { id: s18, class: execute, width: 190, title: 18. Executes criteria-based sharing rules }
+          - { id: s18, class: execute, alignWith: d6, width: 190, title: 18. Executes criteria-based sharing rules }
           - id: s16
             class: calculate
             badge: slds:stop/indigo
@@ -187,7 +189,7 @@ nodes:
         layout: column
         gap: 40
         children:
-          - { id: s19, class: save, icon: slds:database/#9D9EA0, width: 180, title: 19. Commits all DML operations to the database }
+          - { id: s19, class: save, alignWith: s18, icon: slds:database/#9D9EA0, width: 180, title: 19. Commits all DML operations to the database }
           - id: s17
             class: calculate
             width: 180
@@ -195,6 +197,7 @@ nodes:
             bullets: true
             attributes: [Grandparent record goes through save procedure]
       - id: s20
+        alignWith: s18
         fill: "#EDEAFF"
         color: "#443E6A"
         width: 200
@@ -224,9 +227,9 @@ connections:
   - { from: d3, to: s7, label: "NO", color: "#C23934", fromSide: top }
   - { from: d3, to: notsaved, label: "YES", color: "#2E8B57", fromSide: bottom }
   - { from: s7, to: s8 }
-  - { from: s8, to: d4 }
+  - { from: s8, to: d4, fromSide: left, toSide: top }
   - { from: d4, to: s9, label: "NO", color: "#C23934" }
-  - { from: d4, to: s18, label: "YES · skip 9–17", color: "#2E8B57", fromSide: bottom }
+  - { from: d4, to: s18, label: "YES · skip 9–17", color: "#2E8B57", fromSide: bottom, toSide: left }
   - { from: s9, to: s10 }
   - { from: s10, to: s11 }
   - { from: s11, to: d5 }
@@ -238,7 +241,7 @@ connections:
   - { from: s14, to: s15 }
   - { from: s15, to: d6 }
   - { from: d6, to: s18, label: "NO", color: "#C23934" }
-  - { from: d6, to: s16, label: "YES", color: "#2E8B57", fromSide: bottom }
+  - { from: d6, to: s16, label: "YES", color: "#2E8B57", fromSide: bottom, toSide: left }
   - { from: s16, to: s17 }
   - { from: s17, to: s18 }
   - { from: s18, to: s19 }
