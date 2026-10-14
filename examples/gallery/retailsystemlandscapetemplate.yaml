@@ -1,0 +1,89 @@
+# Recreation of the official "Retail System Landscape" template (Salesforce Architects)
+title: Retail System Landscape
+description: >-
+  This Salesforce Diagrams template is an example system landscape - showing a B2C
+  Commerce and Marketing solution, indicating the mix of Salesforce products and other
+  technologies involved in the implementation.
+lineColor: "#0B2F5C"
+classes:
+  nonsf: { label: Non-Salesforce, fill: "#706E6B", color: "#706E6B", text: "#FFFFFF" }
+  sf: { label: Salesforce, fill: "#F3F3F3", color: "#C9C9C9" }
+keyLabels:
+  solid: Native Connection
+  dashed: Custom Integration
+layout: row
+gap: 90
+nodes:
+  - id: external
+    frame: none
+    layout: column
+    justify: center
+    gap: 28
+    children:
+      - { id: hr, class: nonsf, title: "HR Systems (Payroll, HRIS)" }
+      - { id: fuels, class: nonsf, title: Fuels System }
+      - { id: billing, class: nonsf, title: Billings and Payments }
+      - { id: datalake, class: nonsf, title: Data Lake }
+      - { id: erp, class: nonsf, title: ERP System }
+  - id: mulesoft
+    class: sf
+    title: Mulesoft
+    icon: mulesoft
+    width: 180
+    attributes: [Experience APIs, Process APIs, System APIs, Batch uploads, ETL]
+  - id: clouds
+    frame: none
+    layout: column
+    gap: 26
+    children:
+      - id: marketing
+        class: sf
+        title: Marketing Cloud
+        icon: slds:user_role/orange
+        attributes: [Marketing Automation, Emails, Interaction Management, Social Media, Employee Comms]
+      - id: commerce
+        class: sf
+        title: Commerce Cloud B2C
+        icon: slds:cart/green
+        attributes: [Product Catalog, Pricing & Promotions, Commerce Einstein, Page Designer]
+      - id: data360
+        class: sf
+        title: Data 360
+        icon: data-cloud
+        attributes: [Data Management, Segmentation, Identity Resolution, Activation]
+  - id: salesforce
+    title: Salesforce
+    icon: salesforce
+    color: black
+    fill: "#F3F3F3"
+    layout: column
+    width: 220
+    children:
+      - id: sales
+        class: sf
+        title: Sales Cloud
+        icon: slds:line_chart/teal
+        attributes: [Lead Management, Workflows & Approvals, Employee Apps]
+      - id: service
+        class: sf
+        title: Service Cloud
+        icon: slds:heart/maroon
+        attributes: [Case Management, Call Center, Knowledgebase, Process Automation]
+      - id: loyalty
+        class: sf
+        title: Loyalty Management
+        icon: slds:contact/navy
+        attributes: [Accrual and Redemption, Benefits and Voucher Management, Personalized Rewards, Points Expiry]
+connections:
+  - { from: hr, to: mulesoft, style: dashed, arrow: both }
+  - { from: fuels, to: mulesoft, style: dashed, arrow: both }
+  - { from: billing, to: mulesoft, style: dashed, arrow: both }
+  - { from: datalake, to: mulesoft, style: dashed, arrow: both }
+  - { from: erp, to: mulesoft, style: dashed, arrow: both }
+  - { from: mulesoft, to: marketing, arrow: both }
+  - { from: mulesoft, to: commerce, style: dashed, arrow: both }
+  - { from: marketing, to: salesforce, arrow: both }
+  - { from: salesforce, to: marketing }
+  - { from: salesforce, to: commerce }
+  - { from: commerce, to: salesforce }
+  - { from: data360, to: salesforce, arrow: both }

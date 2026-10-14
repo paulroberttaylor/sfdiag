@@ -1,0 +1,59 @@
+# Recreation of the official Salesforce Architects "Hospitality loyalty management process" diagram
+title: Hospitality loyalty management process
+description: This diagram details the time based interactions of systems in a hospitality loyalty management business process.
+keyLabels:
+  dashed: Batch Sync
+key:
+  - { label: Batch Sync, line: dashed }
+  - { label: Streams, icon: slds:data_transforms/indigo }
+  - { label: Interaction Studio, icon: slds:people_score/orange }
+  - { label: Single Source of Truth, icon: slds:user/indigo }
+  - { label: Social Studio, icon: slds:contact/orange }
+  - { label: Segments, icon: slds:target/indigo }
+  - { label: Customer 360 Audiences, icon: slds:emoji_excellent/orange }
+nodes:
+  - id: top
+    frame: none
+    layout: row
+    align: start
+    children:
+      - id: commerce
+        title: Commerce
+        icon: commerce-cloud
+        attributes: [Orders, Offers, Pricing, Catalog]
+        footer: Headless Commerce
+      - id: salesforce
+        title: Salesforce
+        icon: salesforce
+        layout: column
+        children:
+          - id: loyalty
+            title: Loyalty
+            icon: slds:contact/navy
+          - id: sales
+            title: Sales
+            icon: sales-cloud
+          - id: cdp
+            title: Customer Data Platform
+            footerIcons: [slds:data_transforms/indigo, slds:user/indigo, slds:target/indigo]
+      - id: marketing
+        title: Marketing
+        icon: slds:search/orange
+        attributes: [Journeys, Campaigns, Personalized Comms, Interaction Streams, Affinity & Intent]
+        footer: Personalized Communications
+        footerIcons: [slds:people_score/orange, slds:contact/orange, slds:emoji_excellent/orange]
+  - id: mulesoft
+    title: Mulesoft
+    icon: mulesoft
+  - id: hospitality
+    title: Hospitality Data Sources
+    icon: slds:company/darkpurple
+    attributes: ["PMS, RMS, CRS / GDS", Sales & Catering]
+connections:
+  - { from: commerce, to: salesforce, label: 1. Reservation passed to Salesforce }
+  - { from: commerce, to: mulesoft, arrow: none, fromSide: right, toSide: top }
+  - { from: sales, to: loyalty, label: 2. Update Loyalty records, fromSide: left, toSide: left }
+  - { from: sales, to: cdp, label: 3. Reservation history passed to CDP, fromSide: left, toSide: left }
+  - { from: loyalty, to: cdp, label: 4. Loyalty data passed to CDP, fromSide: right, toSide: right }
+  - { from: cdp, to: marketing, label: 5. Segment "enhanced" with loyalty info, toSide: bottom }
+  - { from: commerce, to: mulesoft, style: dashed, label: Reservations }

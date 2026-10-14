@@ -1,0 +1,138 @@
+# Recreation of the official "Data 360 Marketing" system landscape (Salesforce Architects template)
+title: Data 360 Marketing
+description: >-
+  This Salesforce Diagrams template is an example system landscape - a Customer 360
+  Architecture showing how different components within an integrated Salesforce
+  solution communicate with each other using native connectors
+logo: salesforce
+classes:
+  nonsf: { label: Non-Salesforce, fill: "#DDE1EA", color: "#5C5C5C" }
+  sf: { label: Salesforce, fill: "#FFFFFF", color: "#5C5C5C" }
+keyLabels:
+  dashed: Custom Integration
+  solid: Native Integration
+layout: row
+gap: 140
+nodes:
+  - id: left
+    frame: none
+    layout: column
+    gap: 14
+    children:
+      - id: sales
+        class: sf
+        title: Sales Cloud
+        icon: slds:line_chart/teal
+        attributes: [Lead Management, Deal Insights, Workflow & Approvals]
+      - id: website
+        class: nonsf
+        title: Website
+        icon: slds:desktop/navy
+        attributes: [Events and Transactions, Behavioral Capture]
+      - id: pos
+        class: nonsf
+        title: Point of Sales
+        icon: slds:user/navy
+        attributes: [Events and Transactions, Behavioral Capture]
+      - id: warehouse
+        class: nonsf
+        title: Data Warehouse
+        icon: slds:layers/#B0B6C3
+        attributes: [Lead Management Workflows & Approvals, Employee Apps]
+      - id: mulesoft
+        class: sf
+        title: Mulesoft
+        icon: mulesoft
+        attributes: [Integration Flow Design, Integration Monitoring & Management]
+      - id: commerce
+        class: sf
+        title: Commerce Cloud B2C
+        icon: slds:cart/green
+        attributes: [Integration Flow Design, Integration Monitoring & Management]
+  - id: middle
+    frame: none
+    layout: column
+    align: center
+    gap: 56
+    children:
+      - id: d360
+        class: sf
+        title: Salesforce Data 360
+        icon: data-cloud
+        layout: column
+        align: center
+        width: 340
+        gap: 70
+        footer: Collect & Unify Customer Data
+        children:
+          - id: ingress
+            class: sf
+            title: Data Ingress
+            width: 200
+            attributes: [Batch and Streaming, Canonical Data Model]
+          - id: idres
+            class: sf
+            title: Identity Resolution
+            width: 200
+            attributes: [Unified Profile, Cross Device Identity]
+          - id: segmentation
+            class: sf
+            title: Segmentation & Activation
+            width: 200
+            attributes: [Drag and Drop Segmentation, AppExchange Support]
+      - id: engagement
+        class: sf
+        title: Engagement
+        width: 250
+        icon: slds:user_role/orange
+        attributes:
+          - Marketing Automation
+          - Multi channel journeys
+          - Transactional Messaging
+          - Campaign and Journey Analytics
+          - Distributed Marketing
+  - id: right
+    frame: none
+    layout: column
+    justify: start
+    gap: 26
+    children:
+      - id: personalization
+        class: sf
+        title: Personalization
+        icon: slds:user_role/orange
+        layout: column
+        children:
+          - id: rtp
+            class: sf
+            title: Real-time Personalization
+            attributes: [Batch and Streaming, Affinity & Intent]
+          - id: idmgmt
+            class: sf
+            title: Identity Management
+            attributes: [Unified Customer Profile, Web & Mobile SDK]
+      - id: tableau
+        class: sf
+        title: Tableau
+        icon: tableau
+        attributes: [Business Intelligence, Enterprise Advanced, Data Visualization, Data Analytics, Visual Discovery]
+      - id: intelligence
+        class: sf
+        title: Intelligence
+        icon: slds:user_role/orange
+        attributes: [Marketing Intelligence, Return on Ad Spend, Data Unification, Data Integration & Harmonization]
+connections:
+  - { from: sales, to: d360, arrow: both }
+  - { from: website, to: d360 }
+  - { from: pos, to: d360, arrow: both }
+  - { from: warehouse, to: d360, arrow: both }
+  - { from: mulesoft, to: d360 }
+  - { from: mulesoft, to: d360, toSide: left }
+  - { from: commerce, to: engagement, arrow: both }
+  - { from: d360, to: engagement, arrow: both }
+  - { from: d360, to: personalization, arrow: both }
+  - { from: d360, to: tableau, arrow: both }
+  - { from: d360, to: intelligence, arrow: both }
+  - { from: engagement, to: intelligence, arrow: both }
+  - { from: personalization, to: tableau, arrow: both, style: dashed }
+  - { from: intelligence, to: personalization, arrow: both, fromSide: right, toSide: right }

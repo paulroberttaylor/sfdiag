@@ -1,0 +1,62 @@
+# Recreation of the official "Data 360 Technical Capability Map" template (Salesforce Architects diagram gallery)
+# AWS service icons are approximated with SLDS utility glyphs in the AWS category colours.
+title: Data 360 Technical Capability Map
+description: >-
+  This Salesforce Diagrams template is an example capability map which details Data 360
+  technical capabilities and the product mix involved in supporting them.
+key:
+  - { label: AWS S3, icon: "slds:bucket/#3F8624" }
+  - { label: Dynamo DB, icon: "slds:data_lake_objects/#3B48CC" }
+  - { label: Amazon RDS, icon: "slds:database/#3B48CC" }
+  - { label: Amazon EMR, icon: "slds:data_graph/#8C4FFF" }
+  - { label: Amazon Elastic Container Kubernetes, icon: "slds:environment_hub/#E2601B" }
+  - { label: Amazon ElastiCache, icon: "slds:offline_cached/#3B48CC" }
+  - { label: Amazon Data Sync, icon: "slds:sync/#1B7F5F" }
+  - { label: Amazon Simple Queue Service, icon: "slds:queue/#D6246E" }
+nodes:
+  - id: technical
+    title: Technical Capability
+    children:
+      - { id: lakehouse, title: Data Lakehouse, height: 66 }
+      - { id: bigdata, title: Big Data Processing, height: 66 }
+      - { id: connectors, title: Data Connectors, height: 66 }
+      - { id: transform, title: Transform and Model, height: 66 }
+      - { id: ssot, title: Real-Time SSOT, height: 66 }
+  - id: services
+    frame: none
+    children:
+      - id: storage
+        title: Storage
+        attributes: [File Storage, Hot Store, SQL Metadata Store, Cached Metadata Security]
+        footerIcons: ["slds:bucket/#3F8624", "slds:data_lake_objects/#3B48CC", "slds:database/#3B48CC", "slds:database/#3B48CC"]
+      - id: engine
+        title: Big Data Engine
+        attributes: [Spark, Trino, Hyper, Airflow]
+        footerIcons: ["slds:data_graph/#8C4FFF", "slds:data_graph/#8C4FFF", "slds:environment_hub/#E2601B"]
+      - id: ingress
+        title: Connectors & Ingress
+        attributes: [CRM Connector, Marketing Cloud, 3rd Party Connectors, Direct Access Connectors]
+        footerIcons: ["slds:sync/#1B7F5F", "slds:environment_hub/#E2601B"]
+      - id: transformation
+        title: Data Transformation
+        attributes: [ETL Transformations, Data Stream Entities, Data Model Entities, Event Data Entities]
+        footerIcons: ["slds:environment_hub/#E2601B"]
+      - id: cdp
+        title: CDP Processing
+        attributes: [Identity Resolution, Segmentation, Real-Time Profiles, Query Services, Einstein Predictions, Activation]
+        footerIcons: ["slds:offline_cached/#3B48CC", "slds:queue/#D6246E"]
+  - id: lightning
+    title: Lightning Platform
+    icon: salesforce
+    attributes: [Setup, Metadata, Apps]
+  - id: consumers
+    frame: none
+    children:
+      - { id: viz, title: Data Visualization & Analysis, attributes: [Tableau, Datorama], height: 130 }
+      - id: activation
+        title: Activation Channels
+        height: 130
+        attributes:
+          - Messaging Journeys
+          - Advertising (FB, Google, LinkedIn, etc).
+          - Real-Time Interaction Management (Experience Personalization, Message Personalization, Next Best Offer

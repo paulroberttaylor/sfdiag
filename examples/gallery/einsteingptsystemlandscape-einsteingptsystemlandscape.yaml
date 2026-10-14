@@ -1,0 +1,98 @@
+# Recreation of the official "Einstein GPT System Landscape" template (Salesforce Architects)
+title: Einstein GPT System Landscape
+description: >-
+  This Salesforce Diagrams template is an example system landscape capturing the mix of
+  Salesforce products and other technology systems available with Einstein GPT
+key:
+  - { icon: slds:line_chart/teal, label: Sales }
+  - { icon: slds:user_role/orange, label: Marketing }
+  - { icon: slds:ai_app/#C47B53, label: Anthropic }
+  - { icon: slds:heart/red, label: Service }
+  - { icon: slack, label: Slack }
+  - { icon: slds:ai_prompt/#39594D, label: Cohere }
+  - { icon: slds:lightning_extension/indigo, label: Platform }
+  - { icon: slds:link/blue, label: CodeGen }
+  - { icon: slds:graph/blue, label: Vertex AI }
+  - { icon: tableau, label: Analytics }
+  - { icon: slds:sparkles/green, label: OpenAI }
+  - { icon: slds:sparkles/purple, label: AWS Sagemaker }
+  - { line: dashed, label: Einstein GPT Trust Layer }
+layout: row
+gap: 110
+nodes:
+  - id: main
+    frame: none
+    layout: column
+    gap: 110
+    children:
+      - id: top
+        frame: none
+        layout: row
+        justify: start
+        gap: 70
+        children:
+          - id: hitl
+            title: Human in the Loop
+            icon: slds:groups/orange
+            width: 300
+            height: 165
+            attributes: [Content Review, Feedback]
+          - id: c360
+            title: Customer 360 Apps
+            icon: slds:apps/indigo
+            width: 600
+            height: 165
+            footerIcons:
+              - slds:user_role/orange
+              - slds:heart/red
+              - slds:line_chart/teal
+              - slack
+              - tableau
+              - slds:lightning_extension/indigo
+      - id: stack
+        title: Einstein Generative AI Stack
+        icon: einstein
+        children:
+          - id: gen-services
+            title: Generative Services & Apps
+            height: 245
+            attributes: [Prompt Templates, Prompt Studio, Setup Experience]
+          - id: found-services
+            title: Foundational Services
+            height: 245
+            attributes: [Generative AI Gateway, Content Moderation, Masking & Demasking, "Inference Engine, & Domain Adaptation"]
+          - id: found-models
+            title: Foundational Models
+            height: 245
+            attributes: [Internal Models by Salesforce, Salesforce-Hosted Models]
+            footerIcons: [slds:link/blue, slds:ai_prompt/#39594D, slds:ai_app/#C47B53]
+      - id: data-sources
+        title: Data Sources
+        icon: database
+        children:
+          - { id: txn-db, title: Transactional Database, icon: database, height: 110 }
+          - { id: lakehouse, title: Data Lakehouse, icon: data-lake, height: 110 }
+  - id: right
+    frame: none
+    layout: column
+    justify: center
+    children:
+      - id: additional
+        title: Additional Models
+        layout: column
+        width: 340
+        children:
+          - id: external-models
+            title: External Models
+            height: 195
+            footerIcons: [slds:sparkles/green]
+          - id: byom
+            title: BYOM
+            height: 195
+            footerIcons: [slds:sparkles/purple, slds:graph/blue]
+connections:
+  - { from: hitl, to: c360, arrow: both }
+  - { from: c360, to: stack, arrow: both }
+  - { from: stack, to: data-sources, arrow: both }
+  - { from: found-models, to: additional, label: TLS/Zero Retention }
+  - { from: additional, to: found-models, label: TLS/Zero Retention }

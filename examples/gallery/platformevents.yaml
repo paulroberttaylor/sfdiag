@@ -1,0 +1,49 @@
+# Recreation of the official "Asynchronous Processing via Platform Events" template (platformevents.png)
+title: Asynchronous Processing via Platform Events
+description: >-
+  This Salesforce Diagrams template is an example interaction process flow from the
+  Asynchronous Processing Decision Guide that shows how asynchronous processing works with
+  platform events. The events published into the bus are delivered in order via publish
+  after commit and then processed in bulk by a flow in a separate synchronous context.
+logo: salesforce
+layout: row
+gap: 180
+keyLabels:
+  "slds:redo/#F38B61": Synchronous Context
+  "slds:rows/#5A8FDE": Asynchronous Context
+nodes:
+  - id: pe
+    title: Platform Events
+    icon: slds:lightning_extension
+    layout: column
+    width: 227
+    footerIcons: ["slds:rows/#5A8FDE"]
+    children:
+      - { id: pe1, title: Event 1, height: 62 }
+      - { id: pe2, title: Event 2, height: 62 }
+      - { id: pen, title: Event n, height: 62 }
+  - id: bus
+    title: Event Bus
+    icon: slds:work_queue
+    layout: column
+    width: 227
+    footerIcons: ["slds:rows/#5A8FDE"]
+    children:
+      - { id: bus1, title: Event 1, height: 62 }
+      - { id: bus2, title: Event 2, height: 62 }
+      - { id: busn, title: Event n, height: 62 }
+  - id: flow
+    title: Flow
+    icon: flow
+    layout: column
+    width: 227
+    footerIcons: ["slds:redo/#F38B61"]
+    children:
+      - { id: flow1, title: Event 1..n, height: 62 }
+connections:
+  - { from: pe1, to: bus1 }
+  - { from: pe2, to: bus2 }
+  - { from: pen, to: busn }
+  - { from: bus1, to: flow1 }
+  - { from: bus2, to: flow1 }
+  - { from: busn, to: flow1 }

@@ -1,0 +1,44 @@
+# Recreation of the official "Queuing Pattern" event-driven architecture template (eventdrivenarchitecturediagrams-queuing.png)
+title: Queuing Pattern
+description: >-
+  This Level 3 documentation and implementation diagram shows an example of the Queuing
+  pattern that depicts an event being published and written to a queue when a record is
+  modified. Subscribers receive copies of the event from their associated queues and make
+  the appropriate updates to their own records.
+logo: salesforce
+header:
+  band: "#004F4D"
+layout: row
+gap: 200
+key:
+  - { label: Publish, line: solid }
+  - { label: Subscribe, line: dashed }
+nodes:
+  - id: sys1
+    title: System 1
+    width: 200
+  - id: bus
+    title: Event Bus
+    layout: column
+    width: 260
+    children:
+      - id: q2
+        title: System 2 Message Queue
+        children:
+          - { id: q2a, title: Event A }
+      - id: q3
+        title: System 3 Message Queue
+        children:
+          - { id: q3a, title: Event A }
+  - id: subscribers
+    frame: none
+    layout: column
+    justify: stretch
+    children:
+      - { id: sys2, title: System 2, width: 200, height: 186 }
+      - { id: sys3, title: System 3, width: 200, height: 186 }
+connections:
+  - { from: sys1, to: q2a, label: Event A }
+  - { from: sys1, to: q3a, label: Event A }
+  - { from: q2, to: sys2, label: Event A, style: dashed }
+  - { from: q3, to: sys3, label: Event A, style: dashed }

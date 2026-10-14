@@ -1,0 +1,87 @@
+# Recreation of the official Salesforce Architects "Customer personalization flow" diagram
+title: Customer personalization flow
+description: >-
+  This diagram details the customer experience personalization provided by Marketing
+  Cloud and driven by the Customer Data Platform. Mulesoft orchestrates integrations to
+  back-end systems, Slack connects everyone on the team, and Marketing Cloud closes the
+  loop with the customer journey.
+layout: row
+gap: 120
+# The engine fills the key column by column; listed so it reads row by row like the original.
+key:
+  - { label: Personalization, icon: slds:groups/indigo }
+  - { label: CMS, icon: slds:knowledge_base/navy }
+  - { label: Privacy, icon: slds:shield/indigo }
+  - { label: SSOT, icon: slds:user/indigo }
+  - { label: Segments, icon: slds:target/indigo }
+  - { label: Analytics, icon: slds:tableau/navy }
+  - { label: AI, icon: slds:einstein/indigo }
+  - { label: Low Code, icon: slds:custom_apps/indigo }
+  - { label: Channels, icon: slds:topic2/indigo }
+  - { label: Automation, icon: slds:screen/indigo }
+  - { label: Apps, icon: slds:phone_portrait/indigo }
+  - { label: Streams, icon: slds:data_transforms/indigo }
+nodes:
+  - id: experience
+    title: Experience
+    icon: desktop
+    attributes: [Community, Commerce, Payments]
+    layout: column
+    footer: Personalized Digital Experiences
+    footerIcons: [slds:custom_apps/indigo, slds:groups/indigo, slds:knowledge_base/navy, slds:phone_portrait/indigo]
+    children:
+      - id: microsites
+        title: Microsites
+        attributes: [Content Zones, Themes, Mobile]
+      - id: cms
+        title: Salesforce CMS
+        attributes: [Content, Assets]
+  - id: col-is
+    frame: none
+    layout: column
+    children:
+      - id: interaction-studio
+        title: Interaction Studio
+        icon: slds:people_score/orange
+        attributes: [Interaction streams, Affinity & intent, Behavioral analytics]
+        footer: Real-time Interaction Management
+        footerIcons: [slds:shield/indigo, slds:einstein/indigo]
+  - id: salesforce
+    title: Salesforce
+    icon: salesforce
+    layout: column
+    footer: Platform Services
+    footerIcons: [slds:einstein/indigo, slds:custom_apps/indigo, slds:screen/indigo, slds:phone_portrait/indigo]
+    children:
+      - id: cdp
+        title: Customer Data Platform (CDP)
+        attributes: [Data Streams, Data Model (CIM), Unified Profile, Calculated Insights, Segmentation, Activation]
+        footer: Collect & Unify Customer Data
+        footerIcons: [slds:data_transforms/indigo, slds:user/indigo, slds:target/indigo, slds:tableau/navy]
+  - id: col-right
+    frame: none
+    layout: column
+    children:
+      - id: marketing-cloud
+        title: Marketing Cloud
+        icon: slds:search/orange
+        attributes: [Journeys]
+        footer: Personalized Communications
+        footerIcons: [slds:target/indigo, slds:einstein/indigo]
+      - id: integration
+        title: Integration
+        icon: mulesoft
+        attributes: [Inventory Management, Shipping]
+      - id: slack
+        title: Slack
+        icon: slack
+        footerIcons: [slds:topic2/indigo, slds:screen/indigo, slds:phone_portrait/indigo]
+connections:
+  - { from: experience, to: interaction-studio, step: 1 }
+  - { from: interaction-studio, to: experience, step: 2 }
+  - { from: interaction-studio, to: salesforce, step: 3 }
+  - { from: salesforce, to: marketing-cloud, step: 4 }
+  - { from: salesforce, to: integration, step: 5 }
+  - { from: integration, to: salesforce, step: 6 }
+  - { from: salesforce, to: slack, step: 7 }
+  - { from: slack, to: salesforce, step: 8 }

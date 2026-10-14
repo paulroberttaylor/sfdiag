@@ -1,0 +1,46 @@
+# Recreation of the official "Claim Check" event-driven architecture template (templateseventdrivenarchitecturediagrams-claimcheck.png)
+title: Claim Check
+description: >-
+  This Salesforce Diagrams template is an example Interaction Process Flow diagram from
+  the Event-Driven Architecture Decision Guide that shows an event being published when a
+  record is modified. The message body of the event is stored in a separate data store
+  while the header, which contains a claim check is passed on to a subscriber. The
+  subscriber then uses the claim check to retrieve the message body when it's ready to
+  process the information when necessary.
+layout: row
+gap: 200
+key:
+  - { label: Publish, line: solid }
+  - { label: Subscribe, line: dashed }
+nodes:
+  - id: sys1
+    title: System 1
+    width: 200
+  - id: middle
+    frame: none
+    layout: column
+    gap: 24
+    children:
+      - id: bus
+        title: Event Bus
+        width: 250
+        children:
+          - id: queue
+            title: Message Queue
+            children:
+              - { id: eventa, title: Event A, attributes: [Event A Claim Check Header] }
+      - id: store
+        title: Message Store
+        width: 250
+        height: 150
+        attributes: [Claim Check Id, Event A Message Body]
+  - id: sys2
+    title: System 2
+    width: 200
+    attributes: [Event A Claim Check]
+connections:
+  - { from: sys1, to: eventa, label: Event A }
+  - { from: sys1, to: store, label: Payload }
+  - { from: queue, to: sys2, label: Event A, style: dashed }
+  - { from: sys2, to: store, label: Event A Claim Check Request }
+  - { from: store, to: sys2, label: Event A Message Body }
