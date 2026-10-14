@@ -5,6 +5,7 @@ import { routeAll, type Point, type Route } from './route.js';
 import { baselineOffset, loadFonts, measure, textPath, type Weight } from './text.js';
 import { resolveColor, theme } from './theme.js';
 import { timelineText as T } from './timeline.js';
+import { swimlaneText as SW } from './swimlane.js';
 
 const C = theme.card;
 const X = theme.connector;
@@ -307,6 +308,21 @@ function drawTimeline(svg: Svg, l: Layout) {
     ln.lines.forEach((s, i) => svg.text(s, t.x + 18, ln.y + ln.h / 2 + (i - (ln.lines.length - 1) / 2) * T.lane * 1.25, T.lane, 700, T.color));
 }
 
+/** Swimlanes: lane backgrounds, a shaded label strip per lane, dividers and the outer frame. */
+function drawSwimlanes(svg: Svg, l: Layout) {
+  const s = l.swimlanes!;
+  for (const ln of s.lanes) {
+    if (ln.fill) svg.push(`<rect x="${r2(ln.x)}" y="${r2(ln.y)}" width="${r2(ln.w)}" height="${r2(ln.h)}" fill="${resolveColor(ln.fill, '#FFFFFF')}"/>`);
+    const strip = s.vertical ? { x: ln.x, y: ln.y, w: ln.w, h: s.stripW } : { x: ln.x, y: ln.y, w: s.stripW, h: ln.h };
+    svg.push(`<rect x="${r2(strip.x)}" y="${r2(strip.y)}" width="${r2(strip.w)}" height="${r2(strip.h)}" fill="${SW.strip}" stroke="${SW.line}" stroke-width="1"/>`);
+    const cx = strip.x + strip.w / 2;
+    const cy = strip.y + strip.h / 2;
+    ln.lines.forEach((t, i) => svg.text(t, cx, cy + (i - (ln.lines.length - 1) / 2) * SW.size * 1.3, SW.size, 700, SW.color, 'middle'));
+    svg.push(`<rect x="${r2(ln.x)}" y="${r2(ln.y)}" width="${r2(ln.w)}" height="${r2(ln.h)}" fill="none" stroke="${SW.line}" stroke-width="1"/>`);
+  }
+  svg.push(`<rect x="${r2(s.x)}" y="${r2(s.y)}" width="${r2(s.w)}" height="${r2(s.h)}" fill="none" stroke="${SW.line}" stroke-width="1.5"/>`);
+}
+
 /** A winding band behind the top-level rows, ending in an arrow (snake flowcharts). */
 function drawRoad(svg: Svg, l: Layout, color: string) {
   const rows = l.root.children;
@@ -341,6 +357,7 @@ export function renderSvg(layout: Layout, opts: RenderOptions = {}): { svg: stri
   drawHeader(svg, layout);
   if (layout.input.road) drawRoad(svg, layout, resolveColor(layout.input.road, '#FBF9C9'));
   if (layout.timeline) drawTimeline(svg, layout);
+  if (layout.swimlanes) drawSwimlanes(svg, layout);
   for (const c of layout.root.children) drawNode(svg, c);
   for (const r of routes) drawRoute(svg, r, lineColor);
   for (const r of routes) drawLabels(svg, r, lineColor);

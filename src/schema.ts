@@ -40,6 +40,7 @@ export interface NodeInput {
   width?: number;
   height?: number;
   alignWith?: string;
+  at?: number;
   children?: NodeInput[];
 }
 
@@ -80,6 +81,7 @@ export const Node: z.ZodType<NodeInput> = z
     badge: z.string().optional().describe('Small icon in the bottom-right corner (explain it in the key).'),
     width: z.number().min(40).max(4000).optional().describe('Minimum width in px.'),
     height: z.number().min(30).max(4000).optional().describe('Minimum height in px.'),
+    at: z.number().min(0).max(200).optional().describe('Swimlane step position (1, 2, 3…; steps sharing a position line up across lanes). Defaults to one after the previous step in the lane.'),
     alignWith: Id.optional().describe('Line this node up with another node (same centre across the parent row/column), e.g. a decision level with the card its branch runs into.'),
     get children() {
       return z.array(Node).optional().describe('Nested cards. A node with children is a container.');
@@ -159,6 +161,26 @@ export const Timeline = z
   })
   .strict();
 
+export const Swimlanes = z
+  .object({
+    orientation: z.enum(['horizontal', 'vertical']).optional().describe('horizontal (default): lanes are rows, flow runs left to right. vertical: lanes are columns, flow runs top to bottom.'),
+    gap: z.number().min(20).max(400).optional().describe('Space between step positions (default 64).'),
+    labelWidth: z.number().min(80).max(300).optional().describe('Lane label strip width for horizontal lanes.'),
+    laneSize: z.number().min(60).max(1200).optional().describe('Minimum lane thickness.'),
+    lanes: z
+      .array(
+        z
+          .object({
+            title: z.string().describe('Actor, team or system that owns the lane.'),
+            fill: Color.optional().describe('Lane background colour.'),
+            steps: z.array(Node).describe('Cards and symbols in this lane; set `at` to line steps up across lanes.'),
+          })
+          .strict(),
+      )
+      .min(1),
+  })
+  .strict();
+
 export const NodeClass = z
   .object({
     label: z.string().optional().describe('Key label; defaults to the class name.'),
@@ -210,10 +232,11 @@ export const Diagram = z
     road: Color.optional().describe('Draws a winding road behind top-level rows (snake flowcharts), e.g. "#FBF9C9".'),
     nodes: z.array(Node).optional().describe('The diagram content. Required unless `timeline` is given.'),
     timeline: Timeline.optional().describe('Roadmap layout: periods across, lanes down, cards spanning periods.'),
+    swimlanes: Swimlanes.optional().describe('Swimlane process flow: one lane per actor, steps at sequence positions.'),
     connections: z.array(Connection).optional(),
   })
   .strict()
-  .refine((d) => (d.nodes?.length ?? 0) > 0 || !!d.timeline, { message: 'add `nodes` (or a `timeline` for roadmaps)', path: ['nodes'] });
+  .refine((d) => (d.nodes?.length ?? 0) > 0 || !!d.timeline || !!d.swimlanes, { message: 'add `nodes` (or a `timeline` for roadmaps, `swimlanes` for swimlane flows)', path: ['nodes'] });
 
 export type DiagramInput = z.infer<typeof Diagram>;
 export type ConnectionInput = z.infer<typeof Connection>;

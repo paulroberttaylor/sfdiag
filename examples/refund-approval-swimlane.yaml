@@ -1,0 +1,32 @@
+title: Refund Request Approval
+description: >-
+  A customer requests a refund through the Experience Cloud site. Service Cloud routes
+  the case, an agent reviews it, and refunds over the limit need a manager's approval
+  before the payment is issued.
+logo: salesforce
+swimlanes:
+  lanes:
+    - title: Customer
+      steps:
+        - { id: request, title: Request refund, icon: user, at: 1 }
+        - { id: notified, title: Receives outcome, icon: email, at: 7 }
+    - title: Service Cloud
+      steps:
+        - { id: case, title: Case created and routed, icon: service-cloud, at: 2 }
+        - { id: pay, title: Issue refund, icon: "slds:moneybag", at: 6 }
+    - title: Service Agent
+      steps:
+        - { id: review, title: Review case, icon: user, at: 3 }
+        - { id: limit, shape: decision, title: Over the limit?, at: 4 }
+    - title: Manager
+      steps:
+        - { id: approve, shape: decision, title: Approve?, at: 5 }
+connections:
+  - { from: request, to: case, label: Web form }
+  - { from: case, to: review }
+  - { from: review, to: limit }
+  - { from: limit, to: pay, label: "NO", color: "#C23934" }
+  - { from: limit, to: approve, label: "YES", color: "#2E8B57" }
+  - { from: approve, to: pay, label: "YES", color: "#2E8B57", fromSide: right, toSide: bottom }
+  - { from: approve, to: notified, label: "NO", color: "#C23934", fromSide: bottom, toSide: bottom }
+  - { from: pay, to: notified }

@@ -382,6 +382,18 @@ export async function exportLucid(layout: Layout): Promise<Buffer> {
     });
     b.group(items, 0);
   }
+  if (layout.swimlanes) {
+    // lanes as plain shapes beneath the cards: background, label strip, label
+    const s = layout.swimlanes;
+    const items: string[] = [];
+    for (const ln of s.lanes) {
+      items.push(b.rect('lane', { x: ln.x, y: ln.y, w: ln.w, h: ln.h }, { fill: ln.fill ? resolveColor(ln.fill, '#FFFFFF') : '#FFFFFF', stroke: { color: '#B0ADAB', width: 1, style: 'solid' }, z: 0 }));
+      const strip = s.vertical ? { x: ln.x, y: ln.y, w: ln.w, h: s.stripW } : { x: ln.x, y: ln.y, w: s.stripW, h: ln.h };
+      items.push(b.rect('strip', strip, { fill: '#F3F3F5', stroke: { color: '#B0ADAB', width: 1, style: 'solid' }, z: 0 }));
+      items.push(b.text(ln.label, strip.x + strip.w / 2, strip.y + strip.h / 2, 14, 700, '#3E3E3C', 1, 'middle')!);
+    }
+    b.group(items, 0);
+  }
   for (const c of layout.root.children) drawNode(b, c, 0, cardIds);
   // the decorative road behind snake flowcharts is not exported (no arcs in Standard Import)
   const lineColor = resolveColor(layout.input.lineColor, X.color);

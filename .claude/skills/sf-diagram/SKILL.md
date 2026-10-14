@@ -175,6 +175,39 @@ Overlapping cards in a lane stack onto extra rows automatically, in list order.
 Items take card options (attributes, icon, footerIcons, class, color…); `connections`
 can link items (dependencies). `keyFlow: rows` fills the key row by row.
 
+## Swimlanes
+
+Use `swimlanes:` instead of `nodes:` for a process with several actors — one lane per
+person, team or system, steps placed at sequence positions (see
+`examples/refund-approval-swimlane.yaml`):
+
+```yaml
+swimlanes:
+  orientation: horizontal   # default: lanes are rows, flow left to right; vertical = lanes are columns
+  lanes:
+    - title: Customer
+      steps:
+        - { id: request, title: Request refund, icon: user, at: 1 }
+        - { id: notified, title: Receives outcome, icon: email, at: 7 }
+    - title: Service Agent
+      steps:
+        - { id: review, title: Review case, at: 3 }
+        - { id: limit, shape: decision, title: Over the limit?, at: 4 }
+connections:
+  - { from: request, to: review }
+  - { from: limit, to: pay, label: "NO", color: "#C23934" }
+```
+
+- `at` is the step's position in the sequence: steps sharing a position line up across
+  lanes, so give each step of a strictly sequential flow its own position. Without `at`,
+  a step goes one after the previous step in its lane.
+- Steps take every card option (icons, attributes, `shape: decision | pill`, `class`…).
+- Two steps in the same lane and position stack. Don't put a decision and the card it
+  branches to at the same position in neighbouring lanes, or the lines overlap.
+- A decision with two branches needs them on different points: when both targets are
+  on the same side, pin one (`fromSide: right`, `fromSide: bottom`…).
+- Options: `gap` between positions (default 64), `labelWidth`, `laneSize`, per-lane `fill`.
+
 ## Layout model (how to get a good picture)
 
 - Layout is nested boxes: each container arranges its children in a `row`, `column` or

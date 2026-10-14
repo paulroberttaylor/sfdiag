@@ -113,6 +113,8 @@ Capability maps, roadmaps, sequence/swimlane flows, data models, interactive edi
 - **Alignment:** `alignWith` levels a node (or the column holding it) with another node;
   a second layout pass grows rows that need room for the move.
 - **Roadmaps:** `timeline:` with periods, lanes and spanning, auto-stacked cards.
+- **Swimlanes:** `swimlanes:` with lanes per actor, steps at sequence positions that line
+  up across lanes, horizontal or vertical orientation.
 - **Layout controls:** `grow`, `cardWidth`, `justify`, `attributesPosition`, indented
   attributes; explicit row gaps are honoured down to line clearance.
 - **Routing:** org-chart bundles (`bundle: true`), perpendicular entries leave from beyond

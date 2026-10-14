@@ -119,6 +119,7 @@ export function validateSource(src: string, opts: { iconDirs?: string[] } = {}):
     });
   };
   walk(d.nodes ?? [], ['nodes']);
+  d.swimlanes?.lanes.forEach((lane, li) => walk(lane.steps, ['swimlanes', 'lanes', li, 'steps']));
   d.timeline?.lanes.forEach((lane, li) => {
     walk(lane.items as NodeInput[], ['timeline', 'lanes', li, 'items']);
     lane.items.forEach((it, ii) => {

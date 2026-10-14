@@ -77,6 +77,7 @@ which is the same document Claude uses. The essentials:
 | Flowchart shapes | `shape: decision \| pill \| note`, categories via `classes`, `reverse: true` rows, `road` |
 | Line things up | `alignWith: <id>` levels a node with another so the line between them is straight |
 | Roadmap | `timeline:` with periods across, lanes down and cards spanning dates |
+| Swimlanes | `swimlanes:` with one lane per actor and steps at sequence positions (`at`) |
 | Header | `header: { eyebrow, bold, logoPosition: side, titleSize, italicDescription }`, `keyTitle`, `keyOrder` |
 
 Layout is a nest of rows, columns and grids, so authors (human or LLM) never place
@@ -114,6 +115,12 @@ using only the skill, with no validation errors and two render rounds.
 
 `examples/approval-workflow.yaml` is a minimal flowchart: start/end pills, a decision and
 yes/no branches, with no routing hints.
+
+![Refund approval swimlane](docs/images/refund-approval-swimlane.png)
+
+`examples/refund-approval-swimlane.yaml` is a swimlane process: one lane per actor, steps
+at sequence positions, decisions branching across lanes. Add `orientation: vertical` to
+run the lanes as columns.
 
 ### Reference gallery recreations
 
@@ -166,10 +173,12 @@ node scripts/glyph-sheet.mjs out.png "flow,data_cloud,tableau"   # preview SLDS 
 ```
 
 Source map: `schema.ts` (format), `validate.ts` (errors and hints), `catalog.ts`
-(icons), `text.ts` (font metrics), `layout.ts` (boxes), `route.ts` (connectors and
-labels), `render.ts` (SVG), `png.ts` (resvg), `lucid.ts` (Lucid export), `cli.ts`.
+(icons), `text.ts` (font metrics), `layout.ts` (boxes), `timeline.ts` (roadmaps),
+`swimlane.ts` (swimlanes), `route.ts` (connectors and labels), `render.ts` (SVG), `png.ts` (resvg), `lucid.ts` (Lucid export), `cli.ts`.
 
 Supported: System Landscape and Solution Architecture diagrams, capability maps,
 roadmaps and release plans (Architects gallery style, see `examples/gallery/`), and
 process flowcharts with decisions, categories and snake layouts (developer-docs style,
-see `examples/order-of-execution.yaml`). Swimlanes and data models are not covered yet.
+see `examples/order-of-execution.yaml`), and swimlane process flows (horizontal or
+vertical lanes, see `examples/refund-approval-swimlane.yaml`). Data models are not
+covered yet.

@@ -1,6 +1,7 @@
 import type { ConnectionInput, DiagramInput, NodeInput } from './schema.js';
 import { resolveColor } from './theme.js';
 import { layoutTimeline, type TimelineItem, type TimelineLayout } from './timeline.js';
+import { layoutSwimlanes, stepPositions, type SwimlaneLayout } from './swimlane.js';
 import { resolveIcon, type ResolvedIcon } from './catalog.js';
 import { labelLines, measure, wrap } from './text.js';
 import { theme } from './theme.js';
@@ -113,6 +114,7 @@ export interface Layout {
   connections: ConnectionInput[];
   input: DiagramInput;
   timeline?: TimelineLayout;
+  swimlanes?: SwimlaneLayout;
 }
 
 export interface LayoutOptions {
@@ -783,6 +785,30 @@ function layoutRoadmap(
   return { width, height: Math.ceil(tl.y + tl.h + m + 8), header, root, nodes, connections: edges, input, timeline: tl };
 }
 
+function layoutSwimlaneDiagram(
+  input: DiagramInput,
+  opts: LayoutOptions,
+  root: LNode,
+  nodes: Map<string, LNode>,
+  edges: ConnectionInput[],
+  steps: { lane: number; at: number; step: NodeInput }[],
+): Layout {
+  const m = theme.canvas.margin;
+  for (const c of root.children) measureNode(c, edges, nodes);
+  const placed = steps.map((t) => ({ lane: t.lane, at: t.at, node: nodes.get(t.step.id)! }));
+  const entries = keyEntries(input, nodes, opts);
+  const minW = Math.max(input.width ?? 0, headerMinWidth(entries), 900) - 2 * m;
+  const sl = layoutSwimlanes(input.swimlanes!, placed, m, 0, minW);
+  const width = Math.ceil(Math.max(input.width ?? 0, sl.w + 2 * m, headerMinWidth(entries)));
+  const header = layoutHeader(input, width, entries, opts);
+  const top = header.h + theme.canvas.headerGap;
+  for (const { node } of placed) place(node, node.x, node.y + top, node.w, node.h);
+  sl.y += top;
+  for (const l of sl.lanes) l.y += top;
+  Object.assign(root, { x: sl.x, y: sl.y, w: sl.w, h: sl.h });
+  return { width, height: Math.ceil(sl.y + sl.h + m + 8), header, root, nodes, connections: edges, input, swimlanes: sl };
+}
+
 export function layoutDiagram(input: DiagramInput, baseOpts: LayoutOptions = {}): Layout {
   // alignWith can need more room than a row's natural height: lay out, note the shortfall
   // per row, and lay out again with that room added (a couple of rounds settles it)
@@ -809,18 +835,25 @@ function layoutOnce(input: DiagramInput, baseOpts: LayoutOptions): { layout: Lay
   const timelineItems = (input.timeline?.lanes ?? []).flatMap((l, lane) =>
     l.items.map((item) => ({ lane, item: { rule: false, ...item } as TimelineItem })),
   );
+  const swimSteps = input.swimlanes
+    ? (() => {
+        const pos = stepPositions(input.swimlanes);
+        return input.swimlanes.lanes.flatMap((l, lane) => l.steps.map((step, i) => ({ lane, at: pos[lane][i], step })));
+      })()
+    : [];
   const rootInput: NodeInput = {
     id: '__root',
     frame: 'none',
     layout: input.layout ?? 'column',
     columns: input.columns,
     gap: input.gap,
-    children: input.timeline ? timelineItems.map((t) => t.item) : input.nodes,
+    children: input.timeline ? timelineItems.map((t) => t.item) : input.swimlanes ? swimSteps.map((t) => t.step) : input.nodes,
   };
   const root = build(rootInput, undefined, nodes, opts);
   nodes.delete('__root');
   const edges = input.connections ?? [];
   if (input.timeline) return { layout: layoutRoadmap(input, opts, root, nodes, edges, timelineItems), short: new Map() };
+  if (input.swimlanes) return { layout: layoutSwimlaneDiagram(input, opts, root, nodes, edges, swimSteps), short: new Map() };
   measureNode(root, edges, nodes, true);
 
   const m = theme.canvas.margin;
