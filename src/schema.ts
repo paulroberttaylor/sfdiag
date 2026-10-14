@@ -30,6 +30,7 @@ export interface NodeInput {
   grow?: number;
   attributesPosition?: 'left' | 'top';
   iconStyle?: 'circle' | 'plain';
+  rule?: boolean;
   border?: 'solid' | 'dashed' | 'dashdot' | 'dotted' | 'none';
   reverse?: boolean;
   shape?: 'card' | 'decision' | 'pill' | 'note';
@@ -66,6 +67,7 @@ export const Node: z.ZodType<NodeInput> = z
       .describe('Container attributes: left column beside the children, or top (under the title). Default: top for column layouts, left otherwise.'),
     iconStyle: z.enum(['circle', 'plain']).optional().describe('circle (white glyph on a coloured disc) or plain (coloured glyph, no disc).'),
     border: z.enum(['solid', 'dashed', 'dashdot', 'dotted', 'none']).optional().describe('Card border style.'),
+    rule: z.boolean().optional().describe('false hides the grey line under the title.'),
     align: z.enum(['stretch', 'start', 'center', 'end']).optional().describe('Cross-axis alignment of children. Default stretch; use center for flowcharts.'),
     reverse: z.boolean().optional().describe('Row runs right-to-left (snake layouts): list children in flow order.'),
     shape: z
@@ -113,6 +115,42 @@ export const KeyItem = z
   })
   .strict();
 
+const Period = z.union([z.string(), z.number()]);
+
+export const TimelineItem = z
+  .object({
+    id: Id,
+    title: z.string(),
+    from: Period.describe('First period (name), or a 0-based position such as 1.5 for mid-February.'),
+    to: Period.optional().describe('Last period (inclusive name) or end position. Defaults to `from`.'),
+    icon: z.string().optional(),
+    attributes: z.array(z.string()).optional(),
+    footer: z.string().optional(),
+    footerIcons: z.array(z.string()).optional(),
+    color: Color.optional(),
+    fill: Color.optional(),
+    class: z.string().optional(),
+    bullets: z.boolean().optional(),
+    badge: z.string().optional(),
+    iconStyle: z.enum(['circle', 'plain']).optional(),
+    border: z.enum(['solid', 'dashed', 'dashdot', 'dotted', 'none']).optional(),
+    rule: z.boolean().optional(),
+  })
+  .strict();
+
+export const Timeline = z
+  .object({
+    periods: z.array(z.string()).min(1).describe('Column headings, e.g. months or quarters.'),
+    periodWidth: z.number().min(60).max(800).optional(),
+    grid: z.enum(['solid', 'dashed']).optional().describe('Period divider style.'),
+    shade: z.enum(['columns', 'lanes', 'none']).optional().describe('Alternate shading of periods or lanes.'),
+    lanes: z
+      .array(z.object({ title: z.string(), items: z.array(TimelineItem) }).strict())
+      .min(1)
+      .describe('Rows (teams, clouds…) each holding cards that span periods.'),
+  })
+  .strict();
+
 export const NodeClass = z
   .object({
     label: z.string().optional().describe('Key label; defaults to the class name.'),
@@ -152,14 +190,17 @@ export const Diagram = z
     lineColor: Color.optional().describe('Default connector colour.'),
     keyRows: z.number().int().min(1).max(12).optional().describe('Force the number of key rows.'),
     keyColumns: z.number().int().min(1).max(12).optional().describe('Force the number of key columns.'),
+    keyFlow: z.enum(['columns', 'rows']).optional().describe('Fill the key column by column (default) or row by row.'),
     iconStyle: z.enum(['circle', 'plain']).optional().describe('Default icon style for every node and the key.'),
     cardWidth: z.number().min(80).max(800).optional().describe('Default width of leaf cards; titles and attributes wrap to fit.'),
     background: z.union([Color, z.literal('none')]).optional().describe('Canvas colour, or none for transparent.'),
     road: Color.optional().describe('Draws a winding road behind top-level rows (snake flowcharts), e.g. "#FBF9C9".'),
-    nodes: z.array(Node).min(1),
+    nodes: z.array(Node).optional().describe('The diagram content. Required unless `timeline` is given.'),
+    timeline: Timeline.optional().describe('Roadmap layout: periods across, lanes down, cards spanning periods.'),
     connections: z.array(Connection).optional(),
   })
-  .strict();
+  .strict()
+  .refine((d) => (d.nodes?.length ?? 0) > 0 || !!d.timeline, { message: 'add `nodes` (or a `timeline` for roadmaps)', path: ['nodes'] });
 
 export type DiagramInput = z.infer<typeof Diagram>;
 export type ConnectionInput = z.infer<typeof Connection>;

@@ -114,3 +114,34 @@ nodes: [{ id: a, title: A }]
     expect(layout.header.key!.entries.map((e) => e.label)).toEqual(['Automation', 'Code', 'Data', 'Privacy']);
   });
 });
+
+describe('timeline', () => {
+  it('places cards across periods and stacks overlaps into sub-rows', () => {
+    const { layout } = build(`title: Roadmap
+timeline:
+  periods: [Jan, Feb, Mar, Apr]
+  lanes:
+    - title: Sales
+      items:
+        - { id: a, title: A, from: Jan, to: Feb }
+        - { id: b, title: B, from: Feb, to: Mar }
+        - { id: c, title: C, from: Mar, to: Apr }
+`);
+    const t = layout.timeline!;
+    const [a, b, c] = ['a', 'b', 'c'].map((id) => layout.nodes.get(id)!);
+    expect(a.x).toBeGreaterThan(t.periods[0].x);
+    expect(a.x + a.w).toBeLessThan(t.periods[2].x);
+    expect(b.y).toBeGreaterThan(a.y); // overlaps A, so it drops to the next row
+    expect(c.y).toBe(a.y); // clear of A, so it shares A's row
+  });
+
+  it('rejects unknown period names with a suggestion', async () => {
+    const { validateSource } = await import('../src/validate.js');
+    const r = validateSource(`title: R
+timeline:
+  periods: [January, February]
+  lanes: [{ title: L, items: [{ id: a, title: A, from: Febuary }] }]
+`);
+    expect(r.errors[0].hint).toContain('February');
+  });
+});

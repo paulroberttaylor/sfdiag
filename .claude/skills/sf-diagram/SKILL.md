@@ -138,6 +138,29 @@ connections:
 - Put long-running rows in top-level `frame: none` rows; alternate `reverse: true` for a
   snake layout and add `road:` to draw the band.
 
+## Roadmaps (timeline)
+
+Use `timeline:` instead of `nodes:` — periods across the top, lanes down the side,
+cards spanning periods (see `examples/gallery/roadmap-business-capability.yaml`):
+
+```yaml
+timeline:
+  periods: [January, February, March, April]   # or "Q1: January 1 - March 30", …
+  shade: columns          # columns | lanes | none (alternate shading)
+  grid: solid             # solid | dashed period dividers
+  periodWidth: 200        # optional, px per period
+  lanes:
+    - title: Sales
+      items:
+        - { id: cpq, title: CPQ, from: February, to: March, footerIcons: [slds:link/navy] }
+        - { id: prm, title: PRM, from: 0.5, to: 2.2 }   # numbers = 0-based positions (0.5 = mid-January)
+```
+
+Names snap to period edges (`to` is inclusive); numbers place cards mid-period.
+Overlapping cards in a lane stack onto extra rows automatically, in list order.
+Items take card options (attributes, icon, footerIcons, class, color…); `connections`
+can link items (dependencies). `keyFlow: rows` fills the key row by row.
+
 ## Layout model (how to get a good picture)
 
 - Layout is nested boxes: each container arranges its children in a `row`, `column` or

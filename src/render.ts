@@ -4,6 +4,7 @@ import type { KeyEntry, Layout, LNode } from './layout.js';
 import { routeAll, type Point, type Route } from './route.js';
 import { baselineOffset, loadFonts, measure, textPath, type Weight } from './text.js';
 import { resolveColor, theme } from './theme.js';
+import { timelineText as T } from './timeline.js';
 
 const C = theme.card;
 const X = theme.connector;
@@ -196,7 +197,7 @@ function drawNode(svg: Svg, n: LNode) {
     );
     if (n.icon) svg.icon(n.icon, n.x + C.iconTop + C.icon / 2, n.y + C.iconTop + C.icon / 2, n.icon.plain && !n.icon.custom ? C.icon * 0.62 : C.icon, n.iconPlain);
     n.titleLines.forEach((t, i) => svg.text(t, n.x + n.textX, n.y + n.titleCenter + i * C.titleLineHeight, C.titleSize, 700, n.titleColor));
-    if (n.titleLines.length) {
+    if (n.titleLines.length && n.input.rule !== false) {
       svg.push(
         `<line x1="${r2(n.x + n.textX)}" y1="${r2(n.y + n.ruleY)}" x2="${r2(n.x + n.w - bw / 2)}" y2="${r2(n.y + n.ruleY)}" stroke="${C.ruleColor}" stroke-width="${C.ruleWidth}"/>`,
       );
@@ -281,6 +282,27 @@ function drawLabels(svg: Svg, r: Route, lineColor: string) {
   }
 }
 
+/** Roadmap grid: period headings, lane labels, shading and period dividers. */
+function drawTimeline(svg: Svg, l: Layout) {
+  const t = l.timeline!;
+  const gridX = t.x + t.labelW;
+  const right = t.x + t.w;
+  const bottom = t.y + t.h;
+  const bodyTop = t.y + t.headerH;
+  const dash = t.grid === 'dashed' ? ' stroke-dasharray="6 5"' : '';
+  if (t.shade === 'columns')
+    t.periods.forEach((p, i) => i % 2 === 1 && svg.push(`<rect x="${r2(p.x)}" y="${r2(t.y)}" width="${r2(p.w)}" height="${r2(t.h)}" fill="${T.shade}"/>`));
+  if (t.shade === 'lanes')
+    t.lanes.forEach((ln, i) => i % 2 === 1 && svg.push(`<rect x="${r2(t.x)}" y="${r2(ln.y)}" width="${r2(t.w)}" height="${r2(ln.h)}" fill="${T.shade}"/>`));
+  // period dividers run the full height; lane dividers span the whole width
+  for (const p of t.periods) svg.push(`<line x1="${r2(p.x)}" y1="${r2(t.y)}" x2="${r2(p.x)}" y2="${r2(bottom)}" stroke="${T.line}" stroke-width="1"${dash}/>`);
+  for (const ln of t.lanes) svg.push(`<line x1="${r2(t.x)}" y1="${r2(ln.y)}" x2="${r2(right)}" y2="${r2(ln.y)}" stroke="${T.line}" stroke-width="1"/>`);
+  svg.push(`<rect x="${r2(gridX)}" y="${r2(t.y)}" width="${r2(right - gridX)}" height="${r2(t.h)}" fill="none" stroke="${T.line}" stroke-width="1"${dash}/>`);
+  svg.push(`<rect x="${r2(t.x)}" y="${r2(bodyTop)}" width="${r2(t.w)}" height="${r2(bottom - bodyTop)}" fill="none" stroke="${T.line}" stroke-width="1"/>`);
+  for (const p of t.periods) svg.text(p.label, p.x + p.w / 2, t.y + t.headerH / 2, T.period, 700, T.color, 'middle');
+  for (const ln of t.lanes) svg.text(ln.label, t.x + 18, ln.y + ln.h / 2, T.lane, 700, T.color);
+}
+
 /** A winding band behind the top-level rows, ending in an arrow (snake flowcharts). */
 function drawRoad(svg: Svg, l: Layout, color: string) {
   const rows = l.root.children;
@@ -314,6 +336,7 @@ export function renderSvg(layout: Layout, opts: RenderOptions = {}): { svg: stri
   const lineColor = resolveColor(layout.input.lineColor, X.color);
   drawHeader(svg, layout);
   if (layout.input.road) drawRoad(svg, layout, resolveColor(layout.input.road, '#FBF9C9'));
+  if (layout.timeline) drawTimeline(svg, layout);
   for (const c of layout.root.children) drawNode(svg, c);
   for (const r of routes) drawRoute(svg, r, lineColor);
   for (const r of routes) drawLabels(svg, r, lineColor);

@@ -275,7 +275,7 @@ function drawNode(b: Builder, n: LNode, depth: number, cardIds: Map<string, stri
       const id = b.text(t, n.x + n.textX, n.y + n.titleCenter + i * C.titleLineHeight, C.titleSize, 700, n.titleColor, zp);
       if (id) items.push(id);
     });
-    if (n.titleLines.length) {
+    if (n.titleLines.length && n.input.rule !== false) {
       const x0 = n.x + n.textX;
       items.push(b.rect('rule', { x: x0, y: n.y + n.ruleY - C.ruleWidth / 2, w: n.x + n.w - bw / 2 - x0, h: C.ruleWidth }, { fill: C.ruleColor, z: zp }));
     }
@@ -364,6 +364,23 @@ export async function exportLucid(layout: Layout): Promise<Buffer> {
   const cardIds = new Map<string, string>();
   const routes = routeAll(layout);
   drawHeader(b, layout);
+  if (layout.timeline) {
+    // roadmap grid as plain shapes beneath the cards
+    const t = layout.timeline;
+    const style = t.grid === 'dashed' ? 'dashed' : 'solid';
+    const items: string[] = [];
+    t.periods.forEach((p, i) => {
+      const shade = t.shade === 'columns' && i % 2 === 1 ? '#F3F3F5' : '#FFFFFF';
+      items.push(b.rect('per', { x: p.x, y: t.y, w: p.w, h: t.h }, { fill: shade, stroke: { color: '#B0ADAB', width: 1, style }, z: 0 }));
+      items.push(b.text(p.label, p.x + p.w / 2, t.y + t.headerH / 2, 12, 700, '#3E3E3C', 1, 'middle')!);
+    });
+    t.lanes.forEach((ln, i) => {
+      const shade = t.shade === 'lanes' && i % 2 === 1 ? '#F3F3F5' : '#FFFFFF';
+      items.push(b.rect('lane', { x: t.x, y: ln.y, w: t.labelW, h: ln.h }, { fill: shade, stroke: { color: '#B0ADAB', width: 1, style: 'solid' }, z: 0 }));
+      items.push(b.text(ln.label, t.x + 18, ln.y + ln.h / 2, 15, 700, '#3E3E3C', 1)!);
+    });
+    b.group(items, 0);
+  }
   for (const c of layout.root.children) drawNode(b, c, 0, cardIds);
   // the decorative road behind snake flowcharts is not exported (no arcs in Standard Import)
   const lineColor = resolveColor(layout.input.lineColor, X.color);

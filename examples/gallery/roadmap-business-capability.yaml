@@ -1,0 +1,74 @@
+# Recreation of the official "Business Capability Roadmap" (architect.salesforce.com/diagrams)
+title: Business Capability Roadmap
+description: >-
+  This business capability roadmap shows a detailed view of the sales and service
+  capabilities that will be enabled over the next 12 months to assist business
+  stakeholders with planning and budgeting.
+keyRows: 2
+keyFlow: rows
+keyLabels:
+  slds:link/navy: Operational Efficiencies
+  slds:einstein/#3C1A5B: Enhanced Forecasting
+  slds:settings/#3C1A5B: Revenue Generation
+  slds:groups/#3C1A5B: Customer Retention
+timeline:
+  shade: columns
+  periods:
+    - "Q1: January 1 - March 30"
+    - "Q2: April 1 - June 30"
+    - "Q3: July 1 - September 30"
+    - "Q4: October 1 - December 31"
+  periodWidth: 300
+  lanes:
+    - title: Sales
+      items:
+        - id: field-sales
+          title: Field Sales
+          from: 0.26
+          to: 1.24
+          attributes: ["Start Date: January 15", "End Date: April 10", "Dependencies: None"]
+          footerIcons: [slds:settings/#3C1A5B, slds:groups/#3C1A5B]
+        - id: cpq
+          title: CPQ
+          from: 1.47
+          to: 2.5
+          attributes: ["Start Date: April 15", "End Date: August 30", "Dependencies: None"]
+          footerIcons: [slds:link/navy]
+        - id: prm
+          title: Partner Relationship Management
+          from: 0.89
+          to: 1.87
+          attributes: ["Start Date: February 10", "End Date: June 20", "Dependencies: None"]
+          footerIcons: [slds:link/navy]
+        - id: sales-intelligence
+          title: Sales Intelligence
+          from: 2.45
+          to: 3.6
+          attributes: ["Start Date: August 22", "End Date: December 15", "Dependencies: Field Sales, PRM, CPQ"]
+          footerIcons: [slds:einstein/#3C1A5B]
+    - title: Service
+      items:
+        - id: engagement
+          title: Engagement
+          from: 0.26
+          to: 1.43
+          attributes: ["Start Date: January 15", "End Date: June 10", "Dependencies: None"]
+          footerIcons: [slds:settings/#3C1A5B, slds:groups/#3C1A5B]
+        - id: field-service
+          title: Field Service
+          from: 1.59
+          to: 2.53
+          attributes: ["Start Date: June 15", "End Date: October 22", "Dependencies: None"]
+          footerIcons: [slds:link/navy, slds:settings/#3C1A5B]
+        - id: self-service
+          title: Self Service
+          from: 0.89
+          to: 1.87
+          attributes: ["Start Date: March 4", "End Date: August 15", "Dependencies: None"]
+          footerIcons: [slds:link/navy, slds:groups/#3C1A5B]
+        - id: service-intelligence
+          title: Service Intelligence
+          from: 2.5
+          to: 3.6
+          attributes: ["Start Date: August 22", "End Date: December 15", "Dependencies: Self Service, Field Service, Engagement"]
+          footerIcons: [slds:einstein/#3C1A5B]

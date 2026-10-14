@@ -1,5 +1,6 @@
 import type { ConnectionInput, DiagramInput, NodeInput } from './schema.js';
 import { resolveColor } from './theme.js';
+import { layoutTimeline, type TimelineItem, type TimelineLayout } from './timeline.js';
 import { resolveIcon, type ResolvedIcon } from './catalog.js';
 import { labelLines, measure, wrap } from './text.js';
 import { theme } from './theme.js';
@@ -100,6 +101,7 @@ export interface Layout {
   nodes: Map<string, LNode>;
   connections: ConnectionInput[];
   input: DiagramInput;
+  timeline?: TimelineLayout;
 }
 
 export interface LayoutOptions {
@@ -580,7 +582,15 @@ function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], o
     const groups = [entries.filter((e) => e.chip), entries.filter((e) => !e.chip)].filter((g) => g.length);
     const pack = (rows: number) => {
       const cols: KeyEntry[][] = [];
-      for (const g of groups) for (let i = 0; i < g.length; i += rows) cols.push(g.slice(i, i + rows));
+      for (const g of groups) {
+        if (input.keyFlow === 'rows') {
+          // reading order across: entry i goes to column i mod (columns needed)
+          const n = Math.ceil(g.length / rows);
+          const cs: KeyEntry[][] = Array.from({ length: n }, () => []);
+          g.forEach((e, i) => cs[i % n].push(e));
+          cols.push(...cs);
+        } else for (let i = 0; i < g.length; i += rows) cols.push(g.slice(i, i + rows));
+      }
       const widths = cols.map((c) => Math.max(...c.map(entryW)));
       return { cols, widths, w: 2 * H.keyPad + widths.reduce((a, b) => a + b, 0) + (cols.length - 1) * H.keyColGap * 2 };
     };
@@ -642,6 +652,40 @@ function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], o
   };
 }
 
+function headerMinWidth(entries: KeyEntry[]): number {
+  const keyNeed = entries.length
+    ? 2 * H.keyPad + Math.min(entries.length, 4) * (Math.max(...entries.map((e) => 42 + measure(e.label, H.keyLabelSize, 400))) + H.keyColGap)
+    : 0;
+  return H.padX + 360 + 90 + keyNeed + H.keyInset;
+}
+
+function layoutRoadmap(
+  input: DiagramInput,
+  opts: LayoutOptions,
+  root: LNode,
+  nodes: Map<string, LNode>,
+  edges: ConnectionInput[],
+  items: { lane: number; item: TimelineItem }[],
+): Layout {
+  const m = theme.canvas.margin;
+  const measureCard = (n: LNode, width: number) => {
+    n.input = { ...n.input, width };
+    measureNode(n, edges, nodes);
+    return n.nh;
+  };
+  const placed = items.map((t) => ({ ...t, node: nodes.get(t.item.id)! }));
+  const tl = layoutTimeline(input.timeline!, placed, measureCard, m, 0, Math.max(input.width ?? 0, 1200) - 2 * m);
+  const entries = keyEntries(input, nodes, opts);
+  const width = Math.ceil(Math.max(input.width ?? 0, tl.w + 2 * m, headerMinWidth(entries)));
+  const header = layoutHeader(input, width, entries, opts);
+  const top = header.h + theme.canvas.headerGap;
+  for (const { node } of placed) place(node, node.x, node.y + top, node.w, node.h);
+  tl.y += top;
+  for (const l of tl.lanes) l.y += top;
+  Object.assign(root, { x: tl.x, y: tl.y, w: tl.w, h: tl.h });
+  return { width, height: Math.ceil(tl.y + tl.h + m + 8), header, root, nodes, connections: edges, input, timeline: tl };
+}
+
 export function layoutDiagram(input: DiagramInput, baseOpts: LayoutOptions = {}): Layout {
   const opts: LayoutOptions = {
     ...baseOpts,
@@ -651,27 +695,27 @@ export function layoutDiagram(input: DiagramInput, baseOpts: LayoutOptions = {})
     cardWidth: input.cardWidth,
   };
   const nodes = new Map<string, LNode>();
+  const timelineItems = (input.timeline?.lanes ?? []).flatMap((l, lane) =>
+    l.items.map((item) => ({ lane, item: { rule: false, ...item } as TimelineItem })),
+  );
   const rootInput: NodeInput = {
     id: '__root',
     frame: 'none',
     layout: input.layout ?? 'column',
     columns: input.columns,
     gap: input.gap,
-    children: input.nodes,
+    children: input.timeline ? timelineItems.map((t) => t.item) : input.nodes,
   };
   const root = build(rootInput, undefined, nodes, opts);
   nodes.delete('__root');
   const edges = input.connections ?? [];
+  if (input.timeline) return layoutRoadmap(input, opts, root, nodes, edges, timelineItems);
   measureNode(root, edges, nodes, true);
 
   const m = theme.canvas.margin;
   const entries = keyEntries(input, nodes, opts);
   // the header needs room for the title block plus the key panel
-  const keyNeed = entries.length
-    ? 2 * H.keyPad + Math.min(entries.length, 4) * (Math.max(...entries.map((e) => 42 + measure(e.label, H.keyLabelSize, 400))) + H.keyColGap)
-    : 0;
-  const headerMin = H.padX + 360 + 90 + keyNeed + H.keyInset;
-  const width = Math.ceil(Math.max(input.width ?? 0, root.nw + 2 * m, headerMin, 900));
+  const width = Math.ceil(Math.max(input.width ?? 0, root.nw + 2 * m, headerMinWidth(entries), 900));
   const header = layoutHeader(input, width, entries, opts);
   const top = header.h + theme.canvas.headerGap;
   place(root, m, top, width - 2 * m, root.nh, true);

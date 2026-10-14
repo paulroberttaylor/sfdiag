@@ -118,13 +118,29 @@ export function validateSource(src: string, opts: { iconDirs?: string[] } = {}):
       if (n.children) walk(n.children, [...p, 'children']);
     });
   };
-  walk(d.nodes, ['nodes']);
+  walk(d.nodes ?? [], ['nodes']);
+  d.timeline?.lanes.forEach((lane, li) => {
+    walk(lane.items as NodeInput[], ['timeline', 'lanes', li, 'items']);
+    lane.items.forEach((it, ii) => {
+      for (const end of ['from', 'to'] as const) {
+        const v = it[end];
+        if (typeof v !== 'string' || d.timeline!.periods.some((p) => p.toLowerCase() === v.toLowerCase())) continue;
+        const s = suggest(v, d.timeline!.periods);
+        errors.push({
+          path: pathString(['timeline', 'lanes', li, 'items', ii, end]),
+          message: `unknown period "${v}"`,
+          hint: s.length ? `did you mean "${s[0]}"?` : `periods: ${d.timeline!.periods.join(', ')} (or a number such as 1.5)`,
+          line: lineOf(doc, lc, ['timeline', 'lanes', li, 'items', ii, end]),
+        });
+      }
+    });
+  });
   if (d.logo) checkIcon(d.logo, ['logo']);
   if (Array.isArray(d.key)) d.key.forEach((k, i) => k.icon && checkIcon(k.icon, ['key', i, 'icon']));
 
   const parentOf = new Map<string, string | undefined>();
   const mapParents = (nodes: NodeInput[], parent?: string) => nodes.forEach((n) => (parentOf.set(n.id, parent), n.children && mapParents(n.children, n.id)));
-  mapParents(d.nodes);
+  mapParents(d.nodes ?? []);
   (d.connections ?? []).forEach((c, i) => {
     for (const end of ['from', 'to'] as const) {
       if (!ids.has(c[end])) {
