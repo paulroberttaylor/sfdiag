@@ -132,7 +132,9 @@ connections:
   - { from: d1, to: s3, label: "NO", color: "#C23934" }
 ```
 
-- `shape: decision | pill | note` — diamonds/terminals connect at their points.
+- `shape: decision | pill | note` — diamonds/terminals connect at their points. A
+  decision branching down to cards on either side automatically leaves from its left
+  and right points and turns down into each card; no `fromSide`/`toSide` needed.
 - `badge: <icon>` puts a small icon in a card's corner; badges and `keyLabels`
   icon entries appear in the key.
 - Put long-running rows in top-level `frame: none` rows; alternate `reverse: true` for a
