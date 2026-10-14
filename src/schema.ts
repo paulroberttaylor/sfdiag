@@ -25,8 +25,12 @@ export interface NodeInput {
   layout?: 'row' | 'column' | 'grid';
   columns?: number;
   gap?: number;
-  justify?: 'stretch' | 'start' | 'center' | 'space-between';
+  justify?: 'stretch' | 'start' | 'center' | 'end' | 'space-between';
   align?: 'stretch' | 'start' | 'center' | 'end';
+  grow?: number;
+  attributesPosition?: 'left' | 'top';
+  iconStyle?: 'circle' | 'plain';
+  border?: 'solid' | 'dashed' | 'dashdot' | 'dotted' | 'none';
   reverse?: boolean;
   shape?: 'card' | 'decision' | 'pill' | 'note';
   class?: string;
@@ -51,7 +55,17 @@ export const Node: z.ZodType<NodeInput> = z
     layout: z.enum(['row', 'column', 'grid']).optional().describe('How children are arranged. Default row.'),
     columns: z.number().int().min(1).max(12).optional().describe('Columns for grid layout.'),
     gap: z.number().min(0).max(400).optional().describe('Space between children in px.'),
-    justify: z.enum(['stretch', 'start', 'center', 'space-between']).optional().describe('Distribution of spare room along the layout axis.'),
+    justify: z
+      .enum(['stretch', 'start', 'center', 'end', 'space-between'])
+      .optional()
+      .describe('Spare room along the layout axis: stretch grows children, the others position them.'),
+    grow: z.number().min(0.1).max(20).optional().describe('Width share within a row (like CSS flex-grow): e.g. 1 / 3 / 1 gives a wide middle card.'),
+    attributesPosition: z
+      .enum(['left', 'top'])
+      .optional()
+      .describe('Container attributes: left column beside the children, or top (under the title). Default: top for column layouts, left otherwise.'),
+    iconStyle: z.enum(['circle', 'plain']).optional().describe('circle (white glyph on a coloured disc) or plain (coloured glyph, no disc).'),
+    border: z.enum(['solid', 'dashed', 'dashdot', 'dotted', 'none']).optional().describe('Card border style.'),
     align: z.enum(['stretch', 'start', 'center', 'end']).optional().describe('Cross-axis alignment of children. Default stretch; use center for flowcharts.'),
     reverse: z.boolean().optional().describe('Row runs right-to-left (snake layouts): list children in flow order.'),
     shape: z
@@ -80,6 +94,10 @@ export const Connection = z
     color: Color.optional(),
     fromSide: Side.optional(),
     toSide: Side.optional(),
+    bundle: z
+      .boolean()
+      .optional()
+      .describe('Unlabelled fan-outs/fan-ins from one node share a trunk (tree style) by default; false opts out.'),
   })
   .strict();
 
@@ -89,6 +107,9 @@ export const KeyItem = z
     icon: z.string().optional(),
     line: z.enum(['solid', 'dashed', 'dotted']).optional(),
     color: Color.optional(),
+    arrow: z.enum(['end', 'start', 'both', 'none']).optional().describe('Arrowheads on a line sample.'),
+    pill: z.boolean().optional().describe('Draw the label in a pill on a long line sample.'),
+    chip: z.object({ fill: Color.optional(), color: Color.optional() }).strict().optional().describe('Draw the entry as a coloured chip.'),
   })
   .strict();
 
@@ -129,6 +150,11 @@ export const Diagram = z
       .strict()
       .optional(),
     lineColor: Color.optional().describe('Default connector colour.'),
+    keyRows: z.number().int().min(1).max(12).optional().describe('Force the number of key rows.'),
+    keyColumns: z.number().int().min(1).max(12).optional().describe('Force the number of key columns.'),
+    iconStyle: z.enum(['circle', 'plain']).optional().describe('Default icon style for every node and the key.'),
+    cardWidth: z.number().min(80).max(800).optional().describe('Default width of leaf cards; titles and attributes wrap to fit.'),
+    background: z.union([Color, z.literal('none')]).optional().describe('Canvas colour, or none for transparent.'),
     road: Color.optional().describe('Draws a winding road behind top-level rows (snake flowcharts), e.g. "#FBF9C9".'),
     nodes: z.array(Node).min(1),
     connections: z.array(Connection).optional(),

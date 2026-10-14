@@ -104,6 +104,15 @@ export function validateSource(src: string, opts: { iconDirs?: string[] } = {}):
       if (n.frame === 'none' && (n.icon || n.attributes || n.footer)) warnings.push({ path: pathString(p), message: 'icon/attributes/footer are ignored on frame: none groups' });
       if (n.frame === 'none' && !n.children?.length) errors.push({ path: pathString(p), message: `group "${n.id}" has no children`, line: lineOf(doc, lc, p) });
       if (n.title && n.title.length > 40) warnings.push({ path: pathString([...p, 'title']), message: 'long card title; keep titles short so they read at a glance' });
+      n.attributes?.forEach((a, j) => {
+        if (j > 0 && /^[a-z]/.test(a.trim()))
+          warnings.push({
+            path: pathString([...p, 'attributes', j]),
+            message: `attribute "${a}" starts lower-case; was a comma inside an unquoted item split it?`,
+            hint: 'quote items that contain commas: ["Program, member, partner management"]',
+            line: lineOf(doc, lc, [...p, 'attributes', j]),
+          });
+      });
       if ((n.attributes?.length ?? 0) > 8) warnings.push({ path: pathString([...p, 'attributes']), message: 'more than 8 attributes; consider splitting the card' });
       for (const c of [n.color, n.fill]) if (c && !c.startsWith('#') && !palette[c]) errors.push({ path: pathString(p), message: `unknown colour "${c}"`, hint: `palette: ${Object.keys(palette).join(', ')}` });
       if (n.children) walk(n.children, [...p, 'children']);

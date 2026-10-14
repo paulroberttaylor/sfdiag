@@ -91,11 +91,13 @@ export const theme = {
     dash: '6 4',
     dot: '1.5 3',
     pillHeight: 18,
+    pillLineHeight: 11.5,
     pillPadX: 10,
     pillSize: 9.5,
     pillBorder: 1.5,
-    stepSize: 16,
-    stepFill: '#032D60',
+    stepSize: 18,
+    stepFill: '#FFFFFF',
+    stepStroke: '#3A414A',
     clearance: 14, // min distance kept between a routed line and a card
     labelGap: 24, // space either side of a pill inside a gap
     decisionSize: 9.5,

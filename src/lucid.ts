@@ -47,6 +47,8 @@ class Builder {
   images = new Map<string, { file: string; png: Buffer }>();
   private counters = new Map<string, number>();
   private family = loadFonts().family;
+  /** page width: widened text boxes are kept on the page */
+  maxX = Infinity;
 
   id(prefix: string): string {
     const n = (this.counters.get(prefix) ?? 0) + 1;
@@ -93,7 +95,7 @@ class Builder {
     this.shapes.push({
       id,
       type: 'text',
-      boundingBox: { x: r2(x0), y: r2(cy - h / 2), w: r2(w), h },
+      boundingBox: { x: r2(x0), y: r2(cy - h / 2), w: r2(Math.min(w, this.maxX - x0)), h },
       text: this.span(s, size, weight, color, anchor === 'start' ? 'left' : 'center', italic),
       zIndex: z,
     });
@@ -101,9 +103,9 @@ class Builder {
   }
 
   /** Icon image shape (matches Svg.icon in render.ts: plain icons are drawn 1.25x). */
-  icon(ic: ResolvedIcon, cx: number, cy: number, d: number, z: number): string {
-    const file = this.iconFile(ic);
-    const size = ic.plain && !ic.custom ? d * 1.25 : d;
+  icon(ic: ResolvedIcon, cx: number, cy: number, d: number, z: number, bare = false): string {
+    const file = this.iconFile(ic, bare && !ic.custom && !ic.plain);
+    const size = ic.plain && !ic.custom ? d * 1.25 : bare && !ic.custom ? d * 0.8 : d;
     const id = this.id('img');
     this.shapes.push({
       id,
@@ -116,18 +118,18 @@ class Builder {
     return id;
   }
 
-  private iconFile(ic: ResolvedIcon): string {
-    const key = `${ic.id}|${ic.custom}|${ic.plain}|${ic.color}`;
+  private iconFile(ic: ResolvedIcon, bare = false): string {
+    const key = `${ic.id}|${ic.custom}|${ic.plain}|${ic.color}|${bare}`;
     let e = this.images.get(key);
     if (!e) {
-      e = { file: `icon-${this.images.size + 1}.png`, png: svgToPng(iconSvg(ic), 4) };
+      e = { file: `icon-${this.images.size + 1}.png`, png: svgToPng(iconSvg(ic, bare), 4) };
       this.images.set(key, e);
     }
     return e.file;
   }
 }
 
-function iconSvg(ic: ResolvedIcon): string {
+function iconSvg(ic: ResolvedIcon, bare = false): string {
   const d = ICON_PX;
   const sym = `<symbol id="g" viewBox="${ic.glyph.viewBox}">${ic.glyph.body}</symbol>`;
   const fam = loadFonts().family;
@@ -143,6 +145,10 @@ function iconSvg(ic: ResolvedIcon): string {
       const y = S / 2 + d * 0.02 + baselineOffset(size, 600);
       body += `<text x="${S / 2}" y="${y}" font-size="${size}" font-weight="600" text-anchor="middle" fill="#FFFFFF">salesforce</text>`;
     }
+  } else if (ic.id === 'placeholder') {
+    body = `<circle cx="${d / 2}" cy="${d / 2}" r="${d / 2}" fill="${ic.color}"/>`;
+  } else if (bare) {
+    body = `<use href="#g" x="0" y="0" width="${d}" height="${d}" fill="${ic.color}"/>`;
   } else {
     const g = d * 0.52;
     body =
@@ -186,7 +192,7 @@ function drawHeader(b: Builder, l: Layout) {
       const x = k.box.x + k.slots[i].x;
       const cy = k.box.y + k.top + H.keyIcon / 2 + row * k.rowH;
       if (e.chip) {
-        const w = measure(e.label, H.keyLabelSize, 600) + 24;
+        const w = Math.max(...k.entries.filter((x) => x.chip).map((x) => measure(x.label, H.keyLabelSize, 600) + 24));
         items.push(
           b.rect('chip', { x, y: cy - 10, w, h: 20 }, {
             fill: e.chip.fill,
@@ -198,8 +204,8 @@ function drawHeader(b: Builder, l: Layout) {
         );
         return;
       }
-      items.push(keySymbol(b, e, x, cy));
-      const t = b.text(e.label, x + (e.icon ? H.keyIcon : 30) + 10, cy, H.keyLabelSize, 400, h.color, 3);
+      items.push(keySymbol(b, e, x, cy, l.input.iconStyle === 'plain'));
+      const t = b.text(e.lines.join(' '), x + (e.icon ? H.keyIcon : 30) + 10, cy, H.keyLabelSize, 400, h.color, 3);
       if (t) items.push(t);
     });
   }
@@ -219,8 +225,8 @@ function lineShape(b: Builder, p1: { x: number; y: number }, p2: { x: number; y:
   return id;
 }
 
-function keySymbol(b: Builder, e: KeyEntry, x: number, cy: number): string {
-  if (e.icon) return b.icon(e.icon, x + H.keyIcon / 2, cy, H.keyIcon, 3);
+function keySymbol(b: Builder, e: KeyEntry, x: number, cy: number, bare = false): string {
+  if (e.icon) return b.icon(e.icon, x + H.keyIcon / 2, cy, H.keyIcon, 3, bare);
   return lineShape(b, { x, y: cy }, { x: x + 30, y: cy }, resolveColor(e.color, X.color), X.width + 0.5, e.line ?? 'solid', 3);
 }
 
@@ -253,11 +259,18 @@ function drawNode(b: Builder, n: LNode, depth: number, cardIds: Map<string, stri
     const fill = n.fill;
     const bw = C.borderWidth;
     const items: string[] = [];
-    const card = b.rect('card', n, { fill, stroke: { color: stroke, width: strokeW(bw), style: 'solid' }, rounding: 2 * C.radius, z });
+    const border = n.input.border ?? 'solid';
+    const style: Dash = border === 'dotted' ? 'dotted' : border === 'dashed' || border === 'dashdot' ? 'dashed' : 'solid';
+    const card = b.rect('card', n, {
+      fill,
+      stroke: border === 'none' ? NO_STROKE : { color: stroke, width: strokeW(bw), style },
+      rounding: 2 * C.radius,
+      z,
+    });
     cardIds.set(n.id, card);
     items.push(card);
     const zp = z + 1;
-    if (n.icon) items.push(b.icon(n.icon, n.x + C.iconTop + C.icon / 2, n.y + C.iconTop + C.icon / 2, C.icon, zp));
+    if (n.icon) items.push(b.icon(n.icon, n.x + C.iconTop + C.icon / 2, n.y + C.iconTop + C.icon / 2, C.icon, zp, n.iconPlain));
     n.titleLines.forEach((t, i) => {
       const id = b.text(t, n.x + n.textX, n.y + n.titleCenter + i * C.titleLineHeight, C.titleSize, 700, n.titleColor, zp);
       if (id) items.push(id);
@@ -284,7 +297,7 @@ function drawNode(b: Builder, n: LNode, depth: number, cardIds: Map<string, stri
       const total = n.footerIcons.length * d + (n.footerIcons.length - 1) * C.footerIconGap;
       let x = n.x + (n.w - total) / 2 + d / 2;
       for (const ic of n.footerIcons) {
-        items.push(b.icon(ic, x, fy + C.footerIconPadY + d / 2, d, zp));
+        items.push(b.icon(ic, x, fy + C.footerIconPadY + d / 2, d, zp, n.iconPlain));
         x += d + C.footerIconGap;
       }
     }
@@ -322,10 +335,10 @@ function drawRoute(b: Builder, r: Route, cardIds: Map<string, string>, lineColor
     const l = r.label;
     const pill = b.rect('pill', l, {
       fill: '#FFFFFF',
-      stroke: { color, width: strokeW(X.pillBorder), style: 'solid' },
-      rounding: l.h,
+      stroke: { color, width: strokeW(X.pillBorder), style: r.conn.style === 'dashed' ? 'dashed' : 'solid' },
+      rounding: Math.min(l.h, X.pillHeight),
       z: 2000,
-      text: `<span style='text-align: center; color: ${r.conn.color ? color : X.color}; font-size: ${pt(X.pillSize)}pt; font-weight: bold; font-family: ${loadFonts().family}; vertical-align: middle;'>${esc(l.text)}</span>`,
+      text: `<span style='text-align: center; color: ${r.conn.color ? color : X.color}; font-size: ${pt(X.pillSize)}pt; font-weight: bold; font-family: ${loadFonts().family}; vertical-align: middle;'>${l.lines.map(esc).join('<br>')}</span>`,
     });
     items.push(pill);
   }
@@ -335,9 +348,10 @@ function drawRoute(b: Builder, r: Route, cardIds: Map<string, string>, lineColor
     items.push(
       b.rect('step', { x: s.x - d / 2, y: s.y - d / 2, w: d, h: d }, {
         fill: X.stepFill,
+        stroke: { color: X.stepStroke, width: 2, style: 'solid' },
         z: 2001,
         type: 'circle',
-        text: `<span style='text-align: center; color: #FFFFFF; font-size: ${pt(9)}pt; font-weight: bold; font-family: ${loadFonts().family}; vertical-align: middle;'>${s.n}</span>`,
+        text: `<span style='text-align: center; color: ${X.stepStroke}; font-size: ${pt(9)}pt; font-weight: bold; font-family: ${loadFonts().family}; vertical-align: middle;'>${s.n}</span>`,
       }),
     );
   }
@@ -346,6 +360,7 @@ function drawRoute(b: Builder, r: Route, cardIds: Map<string, string>, lineColor
 
 export async function exportLucid(layout: Layout): Promise<Buffer> {
   const b = new Builder();
+  b.maxX = layout.width;
   const cardIds = new Map<string, string>();
   const routes = routeAll(layout);
   drawHeader(b, layout);

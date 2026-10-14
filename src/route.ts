@@ -1,5 +1,5 @@
 import type { ConnectionInput } from './schema.js';
-import { ancestors, isSymbol, type Box, type Layout, type LNode } from './layout.js';
+import { ancestors, isSymbol, pillSize, type Box, type Layout, type LNode } from './layout.js';
 import { measure } from './text.js';
 import { theme } from './theme.js';
 
@@ -18,7 +18,7 @@ export interface Route {
   fromSide: Side;
   toSide: Side;
   points: Point[];
-  label?: { x: number; y: number; w: number; h: number; text: string };
+  label?: { x: number; y: number; w: number; h: number; text: string; lines: string[] };
   step?: { x: number; y: number; n: number };
 }
 
@@ -433,6 +433,60 @@ function fallback(a: Point, as: Side, b: Point): Point[] {
   return [a, { x: a.x, y: my }, { x: b.x, y: my }, b];
 }
 
+type Dir = 'down' | 'up' | 'right' | 'left';
+
+/** Direction from `a` to every node in `bs`, if they all lie clearly on one side of it. */
+function commonDirection(a: LNode, bs: LNode[]): Dir | undefined {
+  const m = 8;
+  if (bs.every((b) => b.y >= a.y + a.h + m)) return 'down';
+  if (bs.every((b) => b.y + b.h <= a.y - m)) return 'up';
+  if (bs.every((b) => b.x >= a.x + a.w + m)) return 'right';
+  if (bs.every((b) => b.x + b.w <= a.x - m)) return 'left';
+  return undefined;
+}
+
+/**
+ * Tree-style bundles: unlabelled connectors fanning out of (or into) one node share a
+ * trunk and a bus line, like an org chart, instead of each taking its own port.
+ */
+function routeBundles(routes: Route[]): Set<Route> {
+  const done = new Set<Route>();
+  const eligible = routes.filter((r) => !r.conn.label && !r.conn.step && r.conn.bundle !== false);
+  const groupBy = (key: (r: Route) => string) => {
+    const m = new Map<string, Route[]>();
+    for (const r of eligible) if (!done.has(r)) (m.get(key(r)) ?? m.set(key(r), []).get(key(r))!).push(r);
+    return [...m.values()].filter((g) => g.length >= 2);
+  };
+  const sideOf: Record<Dir, [Side, Side]> = { down: ['bottom', 'top'], up: ['top', 'bottom'], right: ['right', 'left'], left: ['left', 'right'] };
+  const build = (group: Route[], hub: LNode, others: LNode[], out: boolean) => {
+    const dir = commonDirection(hub, others);
+    if (!dir) return;
+    const [hubSide, otherSide] = out ? sideOf[dir] : [sideOf[dir][0], sideOf[dir][1]];
+    const vertical = dir === 'down' || dir === 'up';
+    const hubPt = portPoint(hub, hubSide, vertical ? hub.x + hub.w / 2 : hub.y + hub.h / 2);
+    // the bus runs halfway between the hub and the nearest of the other nodes
+    const near = others.map((o) => portPoint(o, otherSide, vertical ? o.x + o.w / 2 : o.y + o.h / 2));
+    const reach = near.map((p) => (vertical ? p.y : p.x));
+    const hubC = vertical ? hubPt.y : hubPt.x;
+    const closest = dir === 'down' || dir === 'right' ? Math.min(...reach) : Math.max(...reach);
+    const bus = (hubC + closest) / 2;
+    group.forEach((r, i) => {
+      const p = near[i];
+      const path = vertical
+        ? [hubPt, { x: hubPt.x, y: bus }, { x: p.x, y: bus }, p]
+        : [hubPt, { x: bus, y: hubPt.y }, { x: bus, y: p.y }, p];
+      r.points = simplify(out ? path : [...path].reverse());
+      r.fromSide = out ? hubSide : otherSide;
+      r.toSide = out ? otherSide : hubSide;
+      done.add(r);
+    });
+  };
+  // fan-outs first (org charts), then fan-ins (several publishers into one bus)
+  for (const g of groupBy((r) => r.from.id)) build(g, g[0].from, g.map((r) => r.to), true);
+  for (const g of groupBy((r) => r.to.id)) build(g, g[0].to, g.map((r) => r.from), false);
+  return done;
+}
+
 export function routeAll(layout: Layout): Route[] {
   const routes: Route[] = [];
   for (const conn of layout.connections) {
@@ -441,14 +495,16 @@ export function routeAll(layout: Layout): Route[] {
     const [fromSide, toSide] = chooseSides(from, to, conn, [...layout.nodes.values()]);
     routes.push({ conn, from, to, fromSide, toSide, points: [] });
   }
-  const ports = assignPorts(routes);
+  const bundled = routeBundles(routes);
+  const ports = assignPorts(routes.filter((r) => !bundled.has(r)));
   const framed = [...layout.nodes.values()].filter((n) => n.framed);
   const bounds: Box = { x: 2, y: layout.header.h + 4, w: layout.width - 4, h: layout.height - layout.header.h - 6 };
   const used: Seg[] = [];
   const c = X.clearance;
+  for (const r of bundled) for (let i = 1; i < r.points.length; i++) used.push({ a: r.points[i - 1], b: r.points[i] });
 
   // route shorter connections first: they have the least freedom
-  const order = [...routes].sort((r1, r2) => {
+  const order = routes.filter((r) => !bundled.has(r)).sort((r1, r2) => {
     const d = (r: Route) => Math.abs(r.from.x - r.to.x) + Math.abs(r.from.y - r.to.y);
     return d(r1) - d(r2);
   });
@@ -489,8 +545,9 @@ function placeLabels(routes: Route[]): void {
   for (const r of routes) {
     const { label, step } = r.conn;
     if (!label && !step) continue;
-    const pw = label ? measure(label, X.pillSize, 700) + 2 * X.pillPadX : 0;
-    const ph = X.pillHeight;
+    const ps = label ? pillSize(label) : { w: 0, h: X.pillHeight, lines: [] as string[] };
+    const pw = ps.w;
+    const ph = Math.max(ps.h, step ? X.stepSize : 0);
     const sw = step ? X.stepSize + (label ? 5 : 0) : 0;
     const total = pw + sw;
     const others = routes.filter((o) => o !== r).flatMap(segsOf);
@@ -528,6 +585,6 @@ function placeLabels(routes: Route[]): void {
     const bx = chosen ?? boxAt(cands[0].a, cands[0].b, 0.5);
     taken.push(bx);
     if (step) r.step = { x: bx.x + X.stepSize / 2, y: bx.y + ph / 2, n: step };
-    if (label) r.label = { x: bx.x + sw, y: bx.y, w: pw, h: ph, text: label };
+    if (label) r.label = { x: bx.x + sw, y: bx.y + (ph - ps.h) / 2, w: pw, h: ps.h, text: label, lines: ps.lines };
   }
 }

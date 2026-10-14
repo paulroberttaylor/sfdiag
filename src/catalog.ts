@@ -146,6 +146,11 @@ export interface ResolvedIcon {
  *   3. "slds:<name>" or "slds:<name>/<color>" — any SLDS utility glyph
  */
 export function resolveIcon(ref: string, iconDirs: string[] = []): ResolvedIcon | undefined {
+  if (ref === 'placeholder' || ref.startsWith('placeholder/')) {
+    // an empty disc, as used by the templates' "add your icon here" spots
+    const c = ref.split('/')[1];
+    return { id: 'placeholder', label: 'Placeholder', color: c ? (c.startsWith('#') ? c : palette[c] ?? '#E5E5E5') : '#E5E5E5', plain: false, glyph: { viewBox: '0 0 1 1', body: '' }, custom: false };
+  }
   for (const dir of iconDirs) {
     const file = path.join(dir, `${ref}.svg`);
     if (fs.existsSync(file)) {
@@ -179,7 +184,7 @@ export function resolveIcon(ref: string, iconDirs: string[] = []): ResolvedIcon 
 }
 
 export function iconIds(): string[] {
-  return [...Object.keys(catalog), ...aliasIndex.keys()];
+  return [...Object.keys(catalog), ...aliasIndex.keys(), 'placeholder'];
 }
 
 function titleCase(s: string): string {

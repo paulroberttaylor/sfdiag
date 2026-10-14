@@ -114,3 +114,8 @@ export function textPath(text: string, x: number, y: number, size: number, weigh
   });
   return parts.join('');
 }
+
+/** Lines of a connector label: explicit "\n" breaks, long lines wrapped at ~150px. */
+export function labelLines(label: string, size: number, maxWidth = 150): string[] {
+  return label.split('\n').flatMap((l) => wrap(l, size, 700, maxWidth));
+}

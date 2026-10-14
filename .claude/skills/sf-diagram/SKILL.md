@@ -69,8 +69,29 @@ connections:
     toSide: left
 ```
 
-Other node options: `fill` (light background), `width`/`height` (minimum px),
-`gap`, `justify: stretch|start|center|space-between`.
+Other node options:
+- `fill` (light background); `border: solid|dashed|dashdot|dotted|none`.
+- `width` — exact width for a card (titles and attributes wrap to it); `height` — minimum.
+- `grow: 1|2|3…` — width share within a row (e.g. 1 / 3 / 1 makes a wide middle card).
+- `gap`; `justify: stretch|start|center|end|space-between` (main axis); `align: stretch|start|center|end` (cross axis).
+  Columns keep natural heights unless `justify: stretch`.
+- `attributesPosition: top|left` — a container's attributes go above its children
+  (default for `layout: column`) or in a column to their left (default otherwise).
+- Attributes starting with two spaces are indented one level: `["Leadership", "  Business outcomes"]`.
+  Quote attributes that contain commas, or YAML splits them.
+- `iconStyle: plain` draws the coloured glyph without its disc (also a top-level default);
+  `icon: placeholder` is an empty grey disc.
+
+Top-level options: `cardWidth` (default width for all leaf cards — use it to match a
+reference's proportions), `keyRows` / `keyColumns`, `iconStyle`, `background: none`
+(transparent), and `key:` as an explicit list whose entries may be `{label, icon}`,
+`{label, line: dashed, arrow: both}`, `{label, line: dashed, pill: true}` (label in a pill on
+a long line) or `{label, chip: {fill, color}}`. Write links in the description as
+`[text](https://…)`.
+
+Connectors: `label` may contain `\n` for multi-line pills (long labels wrap). Unlabelled
+connectors fanning out of one node (or into one node) are drawn tree-style with a shared
+trunk and bus; set `bundle: false` on a connector to opt out.
 Colours: navy, blue, cloud, teal, maroon, orange, green, lightgreen, purple, indigo,
 darkpurple, lavender, red, yellow, grey, black — or `#RRGGBB`.
 
