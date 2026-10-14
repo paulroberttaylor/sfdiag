@@ -104,3 +104,20 @@ Connections support `label`, `style: solid|dashed`, `arrow: end|start|both|none`
 ## Out of scope (v1)
 
 Capability maps, roadmaps, sequence/swimlane flows, data models, interactive editor.
+
+## Addendum (2026-10-14): built since this spec
+
+- **Flowcharts:** decision, pill and note shapes; categories (`classes`) with key chips;
+  `reverse` rows and the winding `road` for snake layouts; badges; decisions branch to
+  side cards from their left/right points.
+- **Alignment:** `alignWith` levels a node (or the column holding it) with another node;
+  a second layout pass grows rows that need room for the move.
+- **Roadmaps:** `timeline:` with periods, lanes and spanning, auto-stacked cards.
+- **Layout controls:** `grow`, `cardWidth`, `justify`, `attributesPosition`, indented
+  attributes; explicit row gaps are honoured down to line clearance.
+- **Routing:** org-chart bundles (`bundle: true`), perpendicular entries leave from beyond
+  the target's edge for a clean L, connections never cross their own end cards.
+- **Header and key:** eyebrow, bold and large titles, side logo, italic description, key
+  title and order, key packing options (`keyRows`, `keyColumns`, `keyFlow`).
+- **Examples:** 20 Architects-gallery recreations in `examples/gallery/`, plus the order
+  of execution and approval workflow flowcharts.
