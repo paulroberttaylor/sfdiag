@@ -139,6 +139,7 @@ export const TimelineItem = z
     iconStyle: z.enum(['circle', 'plain']).optional(),
     border: z.enum(['solid', 'dashed', 'dashdot', 'dotted', 'none']).optional(),
     rule: z.boolean().optional(),
+    height: z.number().min(30).max(2000).optional().describe('Minimum card height.'),
   })
   .strict();
 
@@ -146,6 +147,7 @@ export const Timeline = z
   .object({
     periods: z.array(z.string()).min(1).describe('Column headings, e.g. months or quarters.'),
     periodWidth: z.number().min(60).max(800).optional(),
+    periodWidths: z.array(z.number().min(40).max(1200)).optional().describe('Individual period widths (px), in order.'),
     grid: z.enum(['solid', 'dashed']).optional().describe('Period divider style.'),
     shade: z.enum(['columns', 'lanes', 'none']).optional().describe('Alternate shading of periods or lanes.'),
     lanes: z

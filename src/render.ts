@@ -302,7 +302,8 @@ function drawTimeline(svg: Svg, l: Layout) {
   svg.push(`<rect x="${r2(gridX)}" y="${r2(t.y)}" width="${r2(right - gridX)}" height="${r2(t.h)}" fill="none" stroke="${T.line}" stroke-width="1"${dash}/>`);
   svg.push(`<rect x="${r2(t.x)}" y="${r2(bodyTop)}" width="${r2(t.w)}" height="${r2(bottom - bodyTop)}" fill="none" stroke="${T.line}" stroke-width="1"/>`);
   for (const p of t.periods) svg.text(p.label, p.x + p.w / 2, t.y + t.headerH / 2, T.period, 700, T.color, 'middle');
-  for (const ln of t.lanes) svg.text(ln.label, t.x + 18, ln.y + ln.h / 2, T.lane, 700, T.color);
+  for (const ln of t.lanes)
+    ln.lines.forEach((s, i) => svg.text(s, t.x + 18, ln.y + ln.h / 2 + (i - (ln.lines.length - 1) / 2) * T.lane * 1.25, T.lane, 700, T.color));
 }
 
 /** A winding band behind the top-level rows, ending in an arrow (snake flowcharts). */

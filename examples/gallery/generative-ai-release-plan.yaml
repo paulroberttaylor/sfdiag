@@ -1,0 +1,46 @@
+# Recreation of the official "Generative AI Release Plan" (architect.salesforce.com/diagrams, releaseanddelivery)
+title: Generative AI Release Plan
+description: >-
+  This Salesforce Diagram outlines the human involvement, environment strategy and high
+  level deliverables for an initial generative AI project release
+keyRows: 3
+key:
+  - { label: Requirements Gathering, icon: "slds:edit/#321D71" }
+  - { label: Ethical Review, icon: "slds:user/#481A54" }
+  - { label: Executive Approval, icon: "slds:shield/#321D71" }
+  - { label: Model Selection, icon: "slds:data_model/#321D71" }
+  - { label: Prompt Engineering, icon: "slds:einstein/#321D71" }
+  - { label: Data Prep, icon: "slds:database/#321D71" }
+  - { label: Quality Review, icon: "slds:search/#321D71" }
+  - { label: Response Feedback, icon: "slds:groups/#321D71" }
+layout: row
+cardWidth: 250
+gap: 65
+nodes:
+  - id: definition
+    title: Project Definition
+    height: 240
+    attributes: [Business Analysts, Architects, Executive Sponsor, Ethics Team]
+    footerIcons: ["slds:user/#481A54", "slds:edit/#321D71", "slds:data_model/#321D71", "slds:shield/#321D71"]
+  - id: configure
+    title: Configure & Test
+    height: 240
+    attributes: [Admins, Developers]
+    footer: Sandbox
+    footerIcons: ["slds:user/#481A54", "slds:einstein/#321D71", "slds:database/#321D71"]
+  - id: pilot
+    title: Pilot Release
+    height: 240
+    attributes: [Domain Experts, Related Managers]
+    footer: Production
+    footerIcons: ["slds:shield/#321D71", "slds:groups/#321D71", "slds:search/#321D71"]
+  - id: beta
+    title: Beta Release
+    height: 240
+    attributes: [Beta Users, Related Managers]
+    footer: Production
+    footerIcons: ["slds:shield/#321D71", "slds:groups/#321D71", "slds:search/#321D71"]
+connections:
+  - { from: definition, to: configure }
+  - { from: configure, to: pilot }
+  - { from: pilot, to: beta }

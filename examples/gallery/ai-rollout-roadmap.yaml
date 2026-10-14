@@ -1,0 +1,45 @@
+# Recreation of the official "AI Rollout Roadmap" (architect.salesforce.com/diagrams, generativeairollout)
+title: AI Rollout Roadmap
+description: >-
+  This roadmap shows the components that will be rolled out for AI across the Salesforce
+  Customer 360.
+keyRows: 2
+key:
+  - { label: "Ethical\nStandards", icon: "slds:user/#481A54" }
+  - { label: "Quality\nStandards", icon: "slds:shield/#321D71" }
+  - { label: "Success\nMetrics", icon: "slds:contract_doc/#481A54" }
+  - { label: "Model\nSelection", icon: "slds:search/#321D71" }
+  - { label: "Data\nCloud", icon: "slds:database/#321D71" }
+  - { label: "Domain\nExperts", icon: "slds:groups/#321D71" }
+  - { label: "User\nInterface", icon: "slds:desktop_and_phone/#321D71" }
+  - { label: "Feedback\nLoop", icon: "slds:change_owner/#321D71" }
+  - { label: Analytics, icon: "slds:tableau/#032D60" }
+  - { label: CLI, icon: "slds:slack_code_block/#032D60" }
+timeline:
+  shade: lanes
+  grid: dashed
+  periodWidth: 170
+  periods: [January, February, March, April, May, June, July]
+  lanes:
+    - title: Center of Excellence
+      items:
+        - { id: coe-standards, title: Create Standards, from: 0.0, to: 0.99, footerIcons: ["slds:user/#481A54", "slds:shield/#321D71"] }
+        - { id: coe-governance, title: Model Governance, from: 1.07, to: 2.05, footerIcons: ["slds:search/#321D71"] }
+        - { id: coe-reviews, title: AI Quality Reviews, from: 2.08, to: 6.94, footerIcons: ["slds:shield/#321D71", "slds:user/#481A54", "slds:contract_doc/#481A54"] }
+    - title: Sales
+      items:
+        - { id: sales-identify, title: Identify Use Case, from: 0.43, to: 1.49, footerIcons: ["slds:contract_doc/#481A54"] }
+        - { id: sales-aggregate, title: Aggregate Data, from: 1.5, to: 2.48, footerIcons: ["slds:database/#321D71"] }
+        - { id: sales-team, title: Establish Team, from: 2.52, to: 3.5, footerIcons: ["slds:groups/#321D71"] }
+        - { id: sales-release, title: Release & Monitor, from: 3.54, to: 5.74, footerIcons: ["slds:desktop_and_phone/#321D71", "slds:change_owner/#321D71", "slds:tableau/#032D60"] }
+    - title: Service
+      items:
+        - { id: service-identify, title: Identify Use Case, from: 1.53, to: 2.48, footerIcons: ["slds:contract_doc/#481A54"] }
+        - { id: service-aggregate, title: Aggregate Data, from: 2.55, to: 3.5, footerIcons: ["slds:database/#321D71"] }
+        - { id: service-team, title: Establish Team, from: 3.53, to: 4.67, footerIcons: ["slds:groups/#321D71"] }
+        - { id: service-release, title: Release & Monitor, from: 4.74, to: 6.94, footerIcons: ["slds:desktop_and_phone/#321D71", "slds:change_owner/#321D71", "slds:tableau/#032D60"] }
+    - title: Developers
+      items:
+        - { id: dev-identify, title: Identify Use Case, from: 2.58, to: 3.5, footerIcons: ["slds:contract_doc/#481A54"] }
+        - { id: dev-team, title: Establish Team, from: 3.54, to: 4.69, footerIcons: ["slds:groups/#321D71"] }
+        - { id: dev-release, title: Release & Monitor, from: 4.74, to: 6.94, footerIcons: ["slds:slack_code_block/#032D60", "slds:change_owner/#321D71", "slds:tableau/#032D60"] }

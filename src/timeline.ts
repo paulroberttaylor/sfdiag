@@ -1,6 +1,6 @@
 import type { DiagramInput, NodeInput } from './schema.js';
 import type { Box, LNode } from './layout.js';
-import { measure } from './text.js';
+import { measure, wrap } from './text.js';
 
 // Roadmaps: periods (months, quarters…) across the top, lanes (teams, clouds…) down the
 // side, and cards spanning the periods they run through. Cards in a lane that would
@@ -10,7 +10,7 @@ export type TimelineInput = NonNullable<DiagramInput['timeline']>;
 
 export interface TimelineLayout extends Box {
   periods: { label: string; x: number; w: number }[];
-  lanes: { label: string; y: number; h: number }[];
+  lanes: { label: string; lines: string[]; y: number; h: number }[];
   headerH: number;
   labelW: number;
   grid: 'solid' | 'dashed';
@@ -49,8 +49,17 @@ export function layoutTimeline(
   minWidth: number,
 ): TimelineLayout {
   const periods = t.periods;
-  const labelW = Math.max(120, ...t.lanes.map((l) => measure(l.title, LANE_SIZE, 700) + 36));
+  // long lane titles wrap rather than widening the label column past ~190px
+  const labelW = Math.max(120, Math.min(190, ...t.lanes.map((l) => measure(l.title, LANE_SIZE, 700) + 36)));
+  const laneLines = t.lanes.map((l) => wrap(l.title, LANE_SIZE, 700, labelW - 30));
   const periodW = t.periodWidth ?? Math.max(150, Math.floor((minWidth - labelW) / periods.length));
+  const widths = periods.map((_, i) => t.periodWidths?.[i] ?? periodW);
+  const starts = widths.map((_, i) => widths.slice(0, i).reduce((a, b) => a + b, 0));
+  // period position (0-based, fractional) → x
+  const at = (pos: number) => {
+    const i = Math.min(Math.max(Math.floor(pos), 0), periods.length - 1);
+    return gridX + starts[i] + (pos - i) * widths[i];
+  };
   const headerH = 58;
   const gridX = left + labelW;
 
@@ -60,8 +69,8 @@ export function layoutTimeline(
     const mine = items.filter((it) => it.lane === li);
     // each card spans its periods; overlapping cards go to the next free sub-row
     const spans = mine.map((it) => {
-      const x0 = gridX + position(periods, it.item.from, false) * periodW + INSET;
-      const x1 = gridX + position(periods, it.item.to ?? it.item.from, true) * periodW - INSET;
+      const x0 = at(position(periods, it.item.from, false)) + INSET;
+      const x1 = at(position(periods, it.item.to ?? it.item.from, true)) - INSET;
       return { it, x0, x1: Math.max(x1, x0 + 60) };
     });
     const rows: { end: number; items: typeof spans }[] = [];
@@ -79,16 +88,16 @@ export function layoutTimeline(
       cy += h + ROW_GAP;
     }
     const laneH = Math.max(90, cy - ROW_GAP + PAD - y);
-    lanes.push({ label: t.lanes[li].title, y, h: laneH });
+    lanes.push({ label: t.lanes[li].title, lines: laneLines[li], y, h: laneH });
     y += laneH;
   });
 
   return {
     x: left,
     y: top,
-    w: labelW + periods.length * periodW,
+    w: labelW + widths.reduce((a, b) => a + b, 0),
     h: y - top,
-    periods: periods.map((label, i) => ({ label, x: gridX + i * periodW, w: periodW })),
+    periods: periods.map((label, i) => ({ label, x: gridX + starts[i], w: widths[i] })),
     lanes,
     headerH,
     labelW,

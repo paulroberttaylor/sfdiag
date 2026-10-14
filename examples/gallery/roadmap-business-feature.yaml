@@ -1,0 +1,58 @@
+# Recreation of the official "Business Feature Roadmap" (architect.salesforce.com/diagrams, roadmap-business-feature)
+title: Business Feature Roadmap
+description: >-
+  This roadmap shows  an expanded view of features within the Engagement capability that
+  will be enabled to assist business and technical stakeholders with planning
+keyRows: 2
+key:
+  - { label: AI, icon: "slds:einstein/#321D71" }
+  - { label: Mobile, icon: "slds:phone_portrait/#321D71" }
+  - { label: Personalization, icon: "slds:groups/#321D71" }
+  - { label: Privacy, icon: "slds:shield/#321D71" }
+timeline:
+  shade: columns
+  periodWidth: 190
+  periods: [January, February, March, April, May, June]
+  lanes:
+    - title: Engagement
+      items:
+        - id: portal
+          title: Portal Pages and Navigation
+          from: 0.29
+          to: 4.54
+          height: 195
+          attributes: ["Start Date: January 15", "End Date: May 15", "Dependencies:  None"]
+          footerIcons: ["slds:groups/#321D71", "slds:phone_portrait/#321D71"]
+        - id: authentication
+          title: Authentication
+          from: 1.48
+          to: 2.65
+          height: 195
+          attributes: ["Start Date: February 15", "End Date: March 15", "Dependencies: None"]
+          footerIcons: ["slds:shield/#321D71"]
+        - id: case-intake
+          title: Case Intake
+          from: 2.65
+          to: 4.31
+          height: 195
+          attributes: ["Start Date: March 15", "End Date: May 10", "Dependencies: None"]
+          footerIcons: ["slds:phone_portrait/#321D71"]
+        - id: live-chat
+          title: Live Chat
+          from: 2.65
+          to: 4.04
+          height: 195
+          attributes: ["Start Date: March 15", "End Date:  April 30", "Dependencies: Portal"]
+        - id: case-reporting
+          title: Case Reporting
+          from: 4.2
+          to: 5.31
+          height: 195
+          attributes: ["Start Date: May 10", "End Date:  June 10", "Dependencies: Portal"]
+        - id: bots
+          title: Bots
+          from: 3.96
+          to: 5.31
+          height: 195
+          attributes: ["Start Date:  May 1", "End Date: June 10", "Dependencies: Portal"]
+          footerIcons: ["slds:einstein/#321D71"]

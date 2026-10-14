@@ -1,0 +1,69 @@
+# Recreation of the official "Technology Component Roadmap" (architect.salesforce.com/diagrams, roadmap-technology-component)
+title: Technology Component Roadmap
+description: >-
+  This  roadmap shows the specific components of a system that will be deployed to assist
+  technical stakeholders with planning and budgeting.
+keyRows: 2
+key:
+  - { label: Authentication, icon: "slds:lock/#032D60" }
+  - { label: Administration, icon: "slds:slider/#032D60" }
+  - { label: App Menu, icon: "slds:apps/#032D60" }
+  - { label: Low Code, icon: "slds:edit/#321D71" }
+  - { label: Pro Code, icon: "slds:apex/#321D71" }
+  - { label: Potential LDV, icon: "slds:database/#321D71" }
+  - { label: Lightning, icon: "slds:connected_apps/#1F0D38" }
+timeline:
+  shade: columns
+  periodWidth: 200
+  periods: [January, February, March, April, May, June]
+  lanes:
+    - title: Sales Cloud
+      items:
+        - id: environment
+          title: Environment Set-Up
+          from: 0.28
+          to: 1.36
+          height: 220
+          attributes: ["Start Date: January 15", "End Date: February 1", "Dependencies: None"]
+          footerIcons: ["slds:slider/#032D60", "slds:connected_apps/#1F0D38", "slds:apps/#032D60", "slds:lock/#032D60"]
+        - id: cpq-integration
+          title: CPQ Integration
+          from: 2.72
+          to: 3.96
+          height: 220
+          attributes: ["Start Date: March 20", "End Date: April 25", "Dependencies: Environment"]
+        - id: lead-conversion
+          title: Custom Lead Conversion Process
+          from: 1.34
+          to: 3.32
+          height: 220
+          attributes: ["Start Date: February 15", "End Date: April 10", "Dependencies: Leads"]
+          footerIcons: ["slds:apex/#321D71"]
+        - id: forecasting
+          title: Forecasting
+          from: 3.33
+          to: 4.59
+          height: 220
+          attributes: ["Start Date: April 20", "End Date: May 15", "Dependencies: Accounts, Contacts, Leads"]
+          footerIcons: ["slds:edit/#321D71"]
+        - id: account-contact
+          title: Account and Contact Management
+          from: 1.16
+          to: 2.45
+          height: 220
+          attributes: ["Start Date: February 5", "End Date: March 15", "Dependencies: Environment"]
+          footerIcons: ["slds:edit/#321D71"]
+        - id: opportunity-quote
+          title: Opportunity and Quote Management
+          from: 2.46
+          to: 3.69
+          height: 220
+          attributes: ["Start Date: March 15", "End Date: April 15", "Dependencies: Accounts, Contacts, Leads"]
+          footerIcons: ["slds:edit/#321D71", "slds:database/#321D71"]
+        - id: territory
+          title: Territory Management
+          from: 3.21
+          to: 4.47
+          height: 220
+          attributes: ["Start Date: April 15", "End Date: May 10", "Dependencies: Accounts, Contacts, Leads"]
+          footerIcons: ["slds:edit/#321D71", "slds:database/#321D71"]

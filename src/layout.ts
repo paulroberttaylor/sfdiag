@@ -43,6 +43,7 @@ export interface LNode extends Box {
   attrY: number; // relative y of first attribute centre
   footerY: number; // relative y of footer band top (or icons row when no band)
   footerBase: number; // footerY for the natural height; footers follow the bottom when stretched
+  contentH: number; // height the content needs (before any `height` minimum)
   iconPlain: boolean;
   /** footer icons follow the diagram-wide icon style only */
   footerPlain: boolean;
@@ -164,6 +165,7 @@ function build(input: NodeInput, parent: LNode | undefined, nodes: Map<string, L
     attrY: 0,
     footerY: 0,
     footerBase: 0,
+    contentH: 0,
     iconPlain: (input.iconStyle ?? opts.iconStyle) === 'plain',
     footerPlain: opts.iconStyle === 'plain',
     nw: 0,
@@ -376,6 +378,7 @@ function measureNode(n: LNode, edges: ConnectionInput[], nodes: Map<string, LNod
   else if (inp.footer) base += 10;
 
   if (n.badge) base += 8;
+  n.contentH = base;
   n.nw =
     inp.width !== undefined && !n.children.length
       ? Math.max(inp.width, footerIconsW)
@@ -394,7 +397,7 @@ function place(n: LNode, x: number, y: number, w: number, h: number, isRoot = fa
     measureNode(n, [], new Map());
   }
   // footers stay at the bottom of a card that was stretched taller than it needs
-  if (n.framed) n.footerY = n.footerBase + Math.max(0, h - n.nh);
+  if (n.framed) n.footerY = n.footerBase + Math.max(0, h - (n.contentH || n.nh));
   if (!n.children.length) return;
   const inp = n.input;
   const layoutKind = inp.layout ?? (isRoot ? 'column' : 'row');
