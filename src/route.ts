@@ -196,6 +196,18 @@ function assignPorts(routes: Route[]): Map<Route, [number, number]> {
       // aim at the overlap with the other node if any, else at its centre
       const [a, b] = overlap(lo, hi, olo, ohi);
       e.pos = b > a ? (a + b) / 2 : Math.min(Math.max(oc, lo), hi);
+      // the other end enters across our axis (e.g. we leave sideways, it is entered from below):
+      // move just far enough along our side to clear its edge, so the line makes a clean L
+      const os = byRoute.get(e.route)!.find((x) => x !== e)!.side;
+      if (horizontalSide(os) !== horizontalSide(e.side)) {
+        const o = e.other;
+        const c = 2 * X.clearance; // room for the turn
+        const [blo, bhi] =
+          os === 'bottom' ? [o.y + o.h + c, Infinity] : os === 'top' ? [-Infinity, o.y - c]
+          : os === 'right' ? [o.x + o.w + c, Infinity] : [-Infinity, o.x - c];
+        const [p, q] = [Math.max(lo, blo), Math.min(hi, bhi)];
+        if (q - p >= 8) e.pos = Math.min(Math.max(e.pos, p), q);
+      }
     }
     list.sort((a, b) => a.pos! - b.pos!);
     for (let iter = 0; iter < 20; iter++) {
@@ -537,6 +549,8 @@ export function routeAll(layout: Layout): Route[] {
       inside(SA, o) || inside(SB, o) ? { x: o.x + c - 1, y: o.y + c - 1, w: o.w - 2 * c + 2, h: o.h - 2 * c + 2 } : o,
     );
     obstacles = obstacles.filter((o) => !inside(SA, o) && !inside(SB, o));
+    // a connection may not cut across its own end cards: their bare outlines block it too
+    for (const n of [r.from, r.to]) if (n.framed && n.children.length === 0) obstacles.push({ x: n.x, y: n.y, w: n.w, h: n.h });
     let mid = astar(SA, da, SB, { x: -db.x, y: -db.y }, obstacles, bounds, used);
     // straight shot if ports line up
     const straight = (A.x === B.x || A.y === B.y) && !obstacles.some((o) => segHitsBox(A, B, o));
