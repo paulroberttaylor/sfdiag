@@ -268,6 +268,9 @@ export function pillSize(label: string): { w: number; h: number; lines: string[]
 /** Gap needed between children i and i+1 of `parent`, given the connections crossing it. */
 function crossingGaps(parent: LNode, axis: 'x' | 'y', base: number, edges: ConnectionInput[], nodes: Map<string, LNode>): number[] {
   const gaps = parent.children.slice(1).map(() => base);
+  // an explicit gap between side-by-side items is honoured down to what a line really
+  // needs (its clearance either side); vertical gaps keep room for labels and turns
+  const tight = axis === 'x' && parent.input.gap !== undefined;
   for (const e of edges) {
     const a = nodes.get(e.from);
     const b = nodes.get(e.to);
@@ -277,10 +280,11 @@ function crossingGaps(parent: LNode, axis: 'x' | 'y', base: number, edges: Conne
     if (ia < 0 || ib < 0 || ia === ib) continue;
     const pill = e.label ? pillSize(e.label) : { w: 0, h: 0 };
     const step = e.step ? X.stepSize + 6 : 0;
-    const lineRoom = 2 * X.clearance + (axis === 'x' ? 24 : 20);
+    const lineRoom = tight ? Math.max(base, 2 * X.clearance) : 2 * X.clearance + (axis === 'x' ? 24 : 20);
+    const labelGap = tight ? X.labelGap / 2 : X.labelGap;
     // only a connector between neighbours puts its pill in this gap; longer ones just pass through
     const labelled = Math.abs(ia - ib) === 1 && (e.label || e.step);
-    const need = !labelled ? lineRoom : axis === 'x' ? Math.max(lineRoom, pill.w + step + 2 * X.labelGap) : Math.max(lineRoom, Math.max(pill.h, X.stepSize) + 30);
+    const need = !labelled ? lineRoom : axis === 'x' ? Math.max(lineRoom, pill.w + step + 2 * labelGap) : Math.max(lineRoom, Math.max(pill.h, X.stepSize) + 30);
     for (let i = Math.min(ia, ib); i < Math.max(ia, ib); i++) gaps[i] = Math.max(gaps[i], need);
   }
   return gaps;
@@ -727,7 +731,7 @@ function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], o
 
 function headerMinWidth(entries: KeyEntry[]): number {
   const keyNeed = entries.length
-    ? 2 * H.keyPad + Math.min(entries.length, 4) * (Math.max(...entries.map((e) => 42 + measure(e.label, H.keyLabelSize, 400))) + H.keyColGap)
+    ? 2 * H.keyPad + Math.min(entries.length, 4) * (Math.max(...entries.map((e) => 42 + Math.max(...e.lines.map((l) => measure(l, H.keyLabelSize, 400))))) + H.keyColGap)
     : 0;
   return H.padX + 360 + 90 + keyNeed + H.keyInset;
 }

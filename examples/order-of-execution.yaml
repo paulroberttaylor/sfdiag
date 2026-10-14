@@ -15,7 +15,7 @@ header:
   bold: true
 lineColor: "#3E3A72"
 road: "#FBF9C9"
-gap: 70
+gap: 40
 classes:
   execute: { label: Execute, fill: "#E0F3E0", color: "#67B4A0" }
   calculate: { label: Calculate, fill: "#CFE4FF", color: "#78AFF0" }
@@ -37,7 +37,8 @@ nodes:
   # ── Row 1: load, validate, before-save automation (left to right)
   - id: row1
     frame: none
-    align: center
+    gap: 26
+    align: start
     children:
       - { id: start, shape: pill, alignWith: d1, title: START }
       - id: s1
@@ -45,33 +46,33 @@ nodes:
         alignWith: d1
         title: 1. Loads the original record
         bullets: true
-        width: 150
+        width: 180
         attributes: [Loads the original record from the database or initializes the record for an upsert statement]
       - id: s2
         class: load
         alignWith: d1
         title: 2. Loads the new record values
         bullets: true
-        width: 150
+        width: 180
         attributes: [Loads the new record field values from the request and overwrites the old values]
       - id: c1
         frame: none
         layout: column
         align: center
-        gap: 40
+        gap: 18
         children:
           - { id: d1, shape: decision, title: Did the request come from a standard UI edit page? }
-          - { id: s2b, class: validate, width: 170, title: 2B. Salesforce validates only the foreign keys and restricted picklists }
+          - { id: s2b, class: validate, width: 205, title: 2B. Salesforce validates only the foreign keys and restricted picklists }
       - id: c2
         frame: none
         layout: column
-        gap: 30
+        gap: 18
         children:
           - id: s2a
             class: validate
             title: "2A. Runs system validation to check for:"
             bullets: true
-            width: 230
+            width: 275
             attributes:
               - Compliance with layout-specific rules
               - Required values at the layout level and field-definition level
@@ -82,23 +83,23 @@ nodes:
             icon: slds:apex/#81A7B4
             title: 2C. Before executing a trigger
             bullets: true
-            width: 230
+            width: 275
             attributes: [Salesforce verifies that any custom foreign keys do not refer to the object itself]
-      - { id: d2, shape: decision, width: 150, alignWith: s2a, title: "Were multi-line items created, or is the request from a User object on a standard UI edit page?" }
+      - { id: d2, shape: decision, width: 180, alignWith: s2a, title: "Were multi-line items created, or is the request from a User object on a standard UI edit page?" }
       - id: c3
         frame: none
         layout: column
         align: center
-        gap: 34
+        gap: 18
         children:
-          - { id: s2d, class: validate, width: 170, title: 2D. Runs custom validation rules }
-          - { id: s3, class: execute, alignWith: d2, icon: slds:flow_alt/#76BBA9, width: 190, title: 3. Executes "before save" record-triggered flows }
-      - { id: s4, class: execute, alignWith: s3, icon: slds:apex/#76BBA9, badge: slds:refresh/indigo, width: 180, title: 4. Executes all before triggers }
+          - { id: s2d, class: validate, width: 205, title: 2D. Runs custom validation rules }
+          - { id: s3, class: execute, alignWith: d2, icon: slds:flow_alt/#76BBA9, width: 230, title: 3. Executes "before save" record-triggered flows }
+      - { id: s4, class: execute, alignWith: s3, icon: slds:apex/#76BBA9, badge: slds:refresh/indigo, width: 215, title: 4. Executes all before triggers }
       - id: s5
         class: validate
         title: 5. Runs most system validation steps again
         bullets: true
-        width: 210
+        width: 250
         attributes:
           - Such as verifying that all required fields have a non-null value
           - Runs any custom validation rules
@@ -107,46 +108,48 @@ nodes:
   # ── Row 2: duplicates, save, after triggers, assignment / workflow (right to left)
   - id: row2
     frame: none
+    gap: 26
     reverse: true
     align: center
     children:
-      - { id: s6, class: execute, width: 190, alignWith: s7, title: 6. Executes duplicate rules }
+      - { id: s6, class: execute, width: 230, alignWith: s7, title: 6. Executes duplicate rules }
       - { id: d3, shape: decision, title: Duplicate record identified and uses block action? }
       - id: c5
         frame: none
         layout: column
-        gap: 34
+        gap: 18
         children:
-          - { id: s7, class: save, icon: slds:database/#9D9EA0, width: 200, title: 7. Saves the record to the database, footer: But doesn't commit yet }
-          - { id: notsaved, icon: slds:ban/red, color: "#B85363", width: 260, title: The record is NOT saved, bullets: true, attributes: [No further steps such as after triggers and workflow rules are taken] }
-      - { id: s8, class: execute, alignWith: s7, icon: slds:apex/#76BBA9, badge: slds:refresh/indigo, width: 170, title: 8. Executes all after triggers }
+          - { id: s7, class: save, icon: slds:database/#9D9EA0, width: 240, title: 7. Saves the record to the database, footer: But doesn't commit yet }
+          - { id: notsaved, icon: slds:ban/red, color: "#B85363", width: 310, title: The record is NOT saved, bullets: true, attributes: [No further steps such as after triggers and workflow rules are taken] }
+      - { id: s8, class: execute, alignWith: s7, icon: slds:apex/#76BBA9, badge: slds:refresh/indigo, width: 205, title: 8. Executes all after triggers }
       - { id: d4, shape: decision, alignWith: s9, title: Is this a recursive save? }
       - id: c6
         frame: none
         layout: column
-        gap: 34
+        gap: 18
         children:
-          - { id: s10, class: execute, icon: slds:reply/#76BBA9, width: 180, title: 10. Executes Auto-Response rules }
-          - { id: s9, class: execute, icon: slds:assignment/#76BBA9, width: 180, title: 9. Executes assignment rules }
+          - { id: s10, class: execute, icon: slds:reply/#76BBA9, width: 215, title: 10. Executes Auto-Response rules }
+          - { id: s9, class: execute, icon: slds:assignment/#76BBA9, width: 215, title: 9. Executes assignment rules }
       - id: c7
         frame: none
         layout: column
-        gap: 34
+        gap: 18
         children:
-          - { id: s11, class: execute, icon: slds:custom_apps/#76BBA9, width: 180, title: 11. Executes Workflow rules }
-          - { id: s12, class: execute, icon: slds:hierarchy/#76BBA9, width: 180, title: 12. Executes escalation rules }
+          - { id: s11, class: execute, icon: slds:custom_apps/#76BBA9, width: 215, title: 11. Executes Workflow rules }
+          - { id: s12, class: execute, icon: slds:hierarchy/#76BBA9, width: 215, title: 12. Executes escalation rules }
       - { id: d5, shape: decision, alignWith: s11, title: Are there any workflow field updates? }
 
   # ── Row 3: workflow re-save, flows, roll-ups, sharing, commit (left to right)
   - id: row3
     frame: none
+    gap: 26
     align: start
     children:
       - id: s11a
         icon: slds:custom_apps/#443E6A
         fill: "#EDEAFF"
         color: "#443E6A"
-        width: 210
+        width: 250
         title: "11A. If there are workflow field updates:"
         bullets: true
         attributes:
@@ -158,7 +161,7 @@ nodes:
         class: execute
         icon: slds:flow_alt/#76BBA9
         badge: slds:record/indigo
-        width: 190
+        width: 230
         title: 13. Executes Flow automations in no particular order
         bullets: true
         attributes: [Processes built with Process Builder, Flows launched by processes, Flows launched by workflow rules]
@@ -166,33 +169,33 @@ nodes:
         frame: none
         layout: column
         align: center
-        gap: 34
+        gap: 18
         children:
-          - { id: s14, class: execute, icon: slds:flow_alt/#76BBA9, width: 190, title: 14. Executes "after save" record-triggered flows }
-          - { id: s15, class: execute, icon: slds:entitlement/#76BBA9, width: 190, title: 15. Executes Entitlement rules }
+          - { id: s14, class: execute, icon: slds:flow_alt/#76BBA9, width: 230, title: 14. Executes "after save" record-triggered flows }
+          - { id: s15, class: execute, icon: slds:entitlement/#76BBA9, width: 230, title: 15. Executes Entitlement rules }
           - { id: d6, shape: decision, title: Does the record contain roll-up summary fields? }
       - id: c9
         frame: none
         layout: column
-        gap: 40
+        gap: 18
         children:
-          - { id: s18, class: execute, alignWith: d6, width: 190, title: 18. Executes criteria-based sharing rules }
+          - { id: s18, class: execute, alignWith: d6, width: 230, title: 18. Executes criteria-based sharing rules }
           - id: s16
             class: calculate
             badge: slds:stop/indigo
-            width: 190
+            width: 230
             title: 16. Calculates roll-up summary fields on parent records
             bullets: true
             attributes: [Parent record goes through save procedure]
       - id: c10
         frame: none
         layout: column
-        gap: 40
+        gap: 18
         children:
-          - { id: s19, class: save, alignWith: s18, icon: slds:database/#9D9EA0, width: 180, title: 19. Commits all DML operations to the database }
+          - { id: s19, class: save, alignWith: s18, icon: slds:database/#9D9EA0, width: 215, title: 19. Commits all DML operations to the database }
           - id: s17
             class: calculate
-            width: 180
+            width: 215
             title: 17. Calculates roll-up summary fields on grand-parent records
             bullets: true
             attributes: [Grandparent record goes through save procedure]
@@ -200,7 +203,7 @@ nodes:
         alignWith: s18
         fill: "#EDEAFF"
         color: "#443E6A"
-        width: 200
+        width: 240
         title: "20. Executes post-commit logic. For example:"
         bullets: true
         attributes:

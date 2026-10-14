@@ -10,6 +10,7 @@ key:
   - { label: Social Studio, icon: slds:contact/orange }
   - { label: Segments, icon: slds:target/indigo }
   - { label: "Customer 360\nAudiences", icon: slds:emoji_excellent/orange }
+width: 1243
 nodes:
   - id: top
     frame: none
