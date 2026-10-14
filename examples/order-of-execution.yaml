@@ -108,14 +108,8 @@ nodes:
     reverse: true
     align: center
     children:
-      - id: c4
-        frame: none
-        layout: column
-        align: center
-        gap: 34
-        children:
-          - { id: s6, class: execute, width: 190, title: 6. Executes duplicate rules }
-          - { id: d3, shape: decision, title: Duplicate record identified and uses block action? }
+      - { id: s6, class: execute, width: 190, title: 6. Executes duplicate rules }
+      - { id: d3, shape: decision, title: Duplicate record identified and uses block action? }
       - id: c5
         frame: none
         layout: column
@@ -227,7 +221,7 @@ connections:
   - { from: s4, to: s5 }
   - { from: s5, to: s6 }
   - { from: s6, to: d3 }
-  - { from: d3, to: s7, label: "NO", color: "#C23934", fromSide: left }
+  - { from: d3, to: s7, label: "NO", color: "#C23934", fromSide: top }
   - { from: d3, to: notsaved, label: "YES", color: "#2E8B57", fromSide: bottom }
   - { from: s7, to: s8 }
   - { from: s8, to: d4 }
