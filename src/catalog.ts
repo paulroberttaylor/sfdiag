@@ -115,6 +115,8 @@ export function loadGlyph(name: string): Glyph {
     const file = path.join(glyphDir(), `${name}.svg`);
     if (!fs.existsSync(file)) throw new Error(`SLDS glyph "${name}" not found`);
     g = parseSvg(fs.readFileSync(file, 'utf8'));
+    // some SLDS glyphs hard-code white fills; strip them so the glyph takes the colour we set
+    g.body = g.body.replace(/\sfill="(#fff|#ffffff|white)"/gi, '');
     glyphCache.set(name, g);
   }
   return g;

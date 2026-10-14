@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import type { ResolvedIcon } from './catalog.js';
-import type { KeyEntry, Layout, LNode } from './layout.js';
+import { keyLineW, keyPillLineW, pillSize, type KeyEntry, type Layout, type LNode } from './layout.js';
 import { routeAll, type Point, type Route } from './route.js';
 import { baselineOffset, loadFonts, measure, textPath, type Weight } from './text.js';
 import { resolveColor, theme } from './theme.js';
@@ -42,7 +42,7 @@ class Svg {
     }
     const a = anchor === 'start' ? '' : ` text-anchor="${anchor}"`;
     const fw = weight === 400 ? '' : ` font-weight="${weight}"`;
-    const fs = italic ? ' font-style="italic"' : '';
+    const fs = (italic ? ' font-style="italic"' : '') + (/^\s|\s$/.test(s) ? ' xml:space="preserve"' : '');
     this.push(`<text x="${r2(x0)}" y="${r2(y)}" font-size="${size}"${fw}${fs}${a} fill="${fill}">${esc(s)}</text>`);
   }
 
@@ -137,25 +137,27 @@ function drawHeader(svg: Svg, l: Layout) {
         return;
       }
       if (e.pill) {
-        drawKeyLine(svg, e, x, x + Math.max(150, measure(e.label, X.pillSize, 700) + 60), cy);
-        const pw = measure(e.label, X.pillSize, 700) + 2 * X.pillPadX;
-        const mx = x + Math.max(150, measure(e.label, X.pillSize, 700) + 60) / 2;
-        const dash = e.line === 'dashed' ? ` stroke-dasharray="${X.dash}"` : '';
-        svg.push(`<rect x="${r2(mx - pw / 2)}" y="${r2(cy - X.pillHeight / 2)}" width="${r2(pw)}" height="${X.pillHeight}" rx="${X.pillHeight / 2}" fill="#FFFFFF" stroke="${resolveColor(e.color, X.color)}" stroke-width="${X.pillBorder}"${dash}/>`);
-        svg.text(e.label, mx, cy, X.pillSize, 700, X.color, 'middle');
+        const len = keyPillLineW(e.label);
+        drawKeyLine(svg, e, x, x + len, cy);
+        const ps = pillSize(e.label);
+        const mx = x + len / 2;
+        svg.push(`<rect x="${r2(mx - ps.w / 2)}" y="${r2(cy - ps.h / 2)}" width="${r2(ps.w)}" height="${r2(ps.h)}" rx="${X.pillHeight / 2}" fill="#FFFFFF" stroke="${resolveColor(e.color, X.color)}" stroke-width="${X.pillBorder}"/>`);
+        ps.lines.forEach((t, j) => svg.text(t, mx, cy + (j - (ps.lines.length - 1) / 2) * X.pillLineHeight, X.pillSize, 700, X.color, 'middle'));
         return;
       }
+      const sampleW = e.icon ? H.keyIcon : keyLineW(e);
       if (e.icon) svg.icon(e.icon, x + H.keyIcon / 2, cy, H.keyIcon, bare);
-      else drawKeyLine(svg, e, x, x + 30, cy);
+      else drawKeyLine(svg, e, x, x + sampleW, cy);
       const lh = H.keyLabelSize * 1.25;
-      e.lines.forEach((t, j) => svg.text(t, x + (e.icon ? H.keyIcon : 30) + 10, cy + (j - (e.lines.length - 1) / 2) * lh, H.keyLabelSize, 400, h.color));
+      e.lines.forEach((t, j) => svg.text(t, x + sampleW + 10, cy + (j - (e.lines.length - 1) / 2) * lh, H.keyLabelSize, 400, h.color));
     });
   }
 }
 
 function drawKeyLine(svg: Svg, e: KeyEntry, x0: number, x1: number, cy: number) {
   const color = resolveColor(e.color, X.color);
-  const dash = e.line === 'dashed' ? ` stroke-dasharray="${X.dash}"` : e.line === 'dotted' ? ` stroke-dasharray="${X.dot}" stroke-linecap="round"` : '';
+  const patterns: Record<string, string> = { dashed: X.dash, dotted: X.dot, dashdot: '10 4 2 4' };
+  const dash = patterns[e.line ?? ''] ? ` stroke-dasharray="${patterns[e.line!]}"${e.line === 'dotted' ? ' stroke-linecap="round"' : ''}` : '';
   const atStart = e.arrow === 'start' || e.arrow === 'both';
   const atEnd = e.arrow === 'end' || e.arrow === 'both';
   const a = atStart ? X.arrowLength - 1 : 0;
@@ -224,7 +226,7 @@ function drawNode(svg: Svg, n: LNode) {
       const total = n.footerIcons.length * d + (n.footerIcons.length - 1) * C.footerIconGap;
       let x = n.x + (n.w - total) / 2 + d / 2;
       for (const ic of n.footerIcons) {
-        svg.icon(ic, x, fy + C.footerIconPadY + d / 2, d, n.iconPlain);
+        svg.icon(ic, x, fy + C.footerIconPadY + d / 2, d, n.footerPlain);
         x += d + C.footerIconGap;
       }
     }

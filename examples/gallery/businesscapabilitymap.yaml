@@ -4,6 +4,8 @@ description: >-
   This diagram details business drivers and capabilities that are part of a
   company's transformational vision, and high-level product positioning
   required to make that vision a reality.
+iconStyle: plain
+keyRows: 3
 keyLabels:
   einstein: AI
   sales-cloud: Sales
@@ -18,20 +20,22 @@ keyLabels:
 nodes:
   - id: drivers
     title: Business Drivers
+    justify: space-between
     children:
-      - { id: bd1, title: Business Driver 1, height: 64 }
-      - { id: bd2, title: Business Driver 2, height: 64 }
-      - { id: bd3, title: Business Driver 3, height: 64 }
-      - { id: bd4, title: Business Driver 4, height: 64 }
-      - { id: bdn, title: Business Driver n, height: 64 }
+      - { id: bd1, title: Business Driver 1, width: 178, height: 64 }
+      - { id: bd2, title: Business Driver 2, width: 178, height: 64 }
+      - { id: bd3, title: Business Driver 3, width: 178, height: 64 }
+      - { id: bd4, title: Business Driver 4, width: 178, height: 64 }
+      - { id: bdn, title: Business Driver n, width: 178, height: 64 }
   - id: categories
     frame: none
+    justify: space-between
     children:
-      - { id: cat1, title: Capability Category One, icon: "slds:record/#E5E5E5", attributes: [Capability 1, Capability 2, Capability 3], height: 130 }
-      - { id: cat2, title: Capability Category Two, icon: "slds:record/#E5E5E5", attributes: [Capability 1, Capability 2, Capability 3], height: 130 }
-      - { id: cat3, title: Capability Category Three, icon: "slds:record/#E5E5E5", attributes: [Capability 1, Capability 2, Capability 3], height: 130 }
-      - { id: cat4, title: Capability Category Four, icon: "slds:record/#E5E5E5", attributes: [Capability 1, Capability 2, Capability 3], height: 130 }
-      - { id: catn, title: Capability Category n, icon: "slds:record/#E5E5E5", attributes: [Capability 1, Capability 2, Capability 3], height: 130 }
+      - { id: cat1, title: Capability Category One, icon: placeholder, width: 178, attributes: [Capability 1, Capability 2, Capability 3], height: 130 }
+      - { id: cat2, title: Capability Category Two, icon: placeholder, width: 178, attributes: [Capability 1, Capability 2, Capability 3], height: 130 }
+      - { id: cat3, title: Capability Category Three, icon: placeholder, width: 178, attributes: [Capability 1, Capability 2, Capability 3], height: 130 }
+      - { id: cat4, title: Capability Category Four, icon: placeholder, width: 178, attributes: [Capability 1, Capability 2, Capability 3], height: 130 }
+      - { id: catn, title: Capability Category n, icon: placeholder, width: 178, attributes: [Capability 1, Capability 2, Capability 3], height: 130 }
   - id: c360
     title: Salesforce Customer 360
     icon: salesforce

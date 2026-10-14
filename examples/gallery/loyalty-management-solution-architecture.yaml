@@ -1,42 +1,41 @@
 # Recreation of the official Salesforce Architects "Loyalty management solution architecture" diagram
 title: Loyalty management solution architecture
 description: This diagram details the products and technology directly involved in a  loyalty management solution.
+keyRows: 1
 key:
   - { label: Streams, icon: slds:data_transforms/indigo }
-  - { label: Single Source of Truth, icon: slds:user/indigo }
+  - { label: "Single Source\nof Truth", icon: slds:user/indigo }
   - { label: Segments, icon: slds:target/indigo }
-  - { label: Interaction Studio, icon: slds:people_score/orange }
+  - { label: "Interaction\nStudio", icon: slds:people_score/orange }
   - { label: Social Studio, icon: slds:contact/orange }
-  - { label: Customer 360 Audiences, icon: slds:emoji_excellent/orange }
+  - { label: "Customer 360\nAudiences", icon: slds:emoji_excellent/orange }
 nodes:
   - id: top
     frame: none
     layout: row
     align: start
     children:
-      - id: left
+      - id: commerce
+        title: Commerce
+        icon: slds:cart/green
+        iconStyle: plain
+        attributes: [Orders, Offers, Pricing, Catalog]
+        footer: Headless Commerce
+      # Tableau sits below the Commerce/Salesforce label: centre it in a tall invisible column.
+      - id: tableau-col
         frame: none
-        layout: row
-        align: start
+        layout: column
+        height: 400
+        justify: center
         children:
-          - id: commerce
-            title: Commerce
-            icon: commerce-cloud
-            attributes: [Orders, Offers, Pricing, Catalog]
-            footer: Headless Commerce
-          # Tableau sits below the Commerce/Salesforce label: centre it in a tall invisible column.
-          - id: tableau-col
-            frame: none
-            layout: column
-            height: 400
-            justify: center
-            children:
-              - id: tableau
-                title: Tableau
-                icon: tableau
+          - id: tableau
+            title: Tableau
+            icon: tableau
+            iconStyle: plain
       - id: salesforce
         title: Salesforce
         icon: salesforce
+        iconStyle: plain
         layout: grid
         columns: 2
         children:
@@ -64,12 +63,14 @@ nodes:
   - id: mulesoft
     title: Mulesoft
     icon: mulesoft
+    iconStyle: plain
   - id: bottom
     frame: none
     layout: row
     children:
       - id: industry
         title: Industry Data Sources
+        grow: 3
         icon: slds:company/purple
         footerIcons:
           - slds:currency/indigo
@@ -91,16 +92,13 @@ nodes:
       - id: suppliers
         title: Supplier & Partner Ecosystem
         attributes: ["Leads, Forecasts, Inventory, POS, etc.", External context]
-# Pill labels are single-line, so the official five-line labels are shortened:
-#   "Order on behalf / Order history / Seamless identity / Loyalty status, points" and
-#   "Abandoned cart / Coupon redemption / Personalized marketing / Recommendations / Transactional emails".
 connections:
-  - { from: salesforce, to: commerce, arrow: both, label: "Orders, identity, loyalty status", fromSide: left, toSide: right }
-  - { from: marketing, to: salesforce, label: "Preferences, clicks, email opens" }
-  - { from: marketing, to: salesforce, arrow: both, label: Marketing Cloud Connect }
-  - { from: marketing, to: salesforce, arrow: both, label: Distributed Marketing }
-  - { from: marketing, to: salesforce, arrow: both, label: Social Customer Service }
-  - { from: commerce, to: mulesoft, arrow: both, label: "Carts, coupons, offers, emails" }
+  - { from: salesforce, to: commerce, arrow: both, label: "Order on behalf\nOrder history\nSeamless identity\nLoyalty status, points", fromSide: left, toSide: right }
+  - { from: marketing, to: salesforce, label: "Preferences\nclicks, email opens" }
+  - { from: marketing, to: salesforce, arrow: both, label: "Marketing Cloud\nConnect" }
+  - { from: marketing, to: salesforce, arrow: both, label: "Distributed\nMarketing" }
+  - { from: marketing, to: salesforce, arrow: both, label: "Social Customer\nService" }
+  - { from: commerce, to: mulesoft, arrow: both, label: "Abandoned cart\nCoupon redemption\nPersonalized marketing\nRecommendations\nTransactional emails" }
   - { from: commerce, to: marketing, arrow: both, fromSide: bottom, toSide: bottom }
   - { from: tableau, to: mulesoft, arrow: both }
   - { from: marketing, to: mulesoft, arrow: both }

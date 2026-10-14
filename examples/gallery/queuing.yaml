@@ -8,6 +8,8 @@ description: >-
 logo: salesforce
 header:
   band: "#004F4D"
+background: none
+keyColumns: 1
 layout: row
 gap: 200
 key:
@@ -35,8 +37,8 @@ nodes:
     layout: column
     justify: stretch
     children:
-      - { id: sys2, title: System 2, width: 200, height: 186 }
-      - { id: sys3, title: System 3, width: 200, height: 186 }
+      - { id: sys2, title: System 2, width: 200 }
+      - { id: sys3, title: System 3, width: 200 }
 connections:
   - { from: sys1, to: q2a, label: Event A }
   - { from: sys1, to: q3a, label: Event A }

@@ -1,9 +1,11 @@
 # Recreation of the official "Salesforce Role Hierarchy" template (Salesforce Architects)
 title: Salesforce Role Hierarchy
 description: >-
-  This Salesforce Diagrams template is an example org hierarchy, capturing a subset of
+  This [Salesforce Diagrams](https://architect.salesforce.com/diagrams) template is an example org hierarchy, capturing a subset of
   roles in order to clarify business structure, personas, and permissions for a
   specific use case
+keyRows: 1
+cardWidth: 160
 key:
   - { icon: slds:user/#5DC6E2, label: User }
   - { icon: slds:groups/#7FA9F7, label: Group }
@@ -15,47 +17,50 @@ nodes:
     align: center
     gap: 48
     children:
-      - { id: ceo, title: CEO, icon: slds:user/#5DC6E2, width: 180 }
-      - { id: marketing, title: MARKETING, icon: slds:groups/#7FA9F7, width: 180 }
+      - { id: ceo, title: CEO, icon: slds:user/#5DC6E2 }
+      - { id: marketing, title: MARKETING, icon: slds:groups/#7FA9F7 }
       - id: level3
         frame: none
         layout: row
         align: start
-        gap: 120
+        gap: 40
         children:
           - id: branch-sales
             frame: none
+            grow: 1
             layout: column
             align: center
             gap: 56
             children:
-              - { id: rsm, title: Regional Sales Manager, icon: slds:groups/#7FA9F7, width: 180 }
-              - { id: agent, title: (External) Sales Agent, icon: slds:company/#7F8DE1, width: 180 }
+              - { id: rsm, title: Regional Sales Manager, icon: slds:groups/#7FA9F7 }
+              - { id: agent, title: (External) Sales Agent, icon: slds:company/#7F8DE1 }
           - id: branch-brm
             frame: none
+            grow: 1
             layout: column
             align: center
             children:
-              - { id: brm, title: Business Relationship Manager, icon: slds:groups/#7FA9F7, width: 180 }
+              - { id: brm, title: Business Relationship Manager, icon: slds:groups/#7FA9F7 }
           - id: branch-ops
             frame: none
+            grow: 1
             layout: column
             align: center
             gap: 70
             children:
-              - { id: ops, title: Operations Manager, icon: slds:groups/#7FA9F7, width: 180 }
+              - { id: ops, title: Operations Manager, icon: slds:groups/#7FA9F7 }
               - id: ops-teams
                 frame: none
                 layout: row
                 gap: 36
                 children:
-                  - { id: front, title: Front Office Team, icon: slds:groups/#7FA9F7, width: 180 }
-                  - { id: back, title: Back Office Team, icon: slds:groups/#7FA9F7, width: 180 }
+                  - { id: front, title: Front Office Team, icon: slds:groups/#7FA9F7 }
+                  - { id: back, title: Back Office Team, icon: slds:groups/#7FA9F7 }
 connections:
   - { from: ceo, to: marketing, arrow: none }
-  - { from: marketing, to: rsm, arrow: none, fromSide: bottom, toSide: top }
-  - { from: marketing, to: brm, arrow: none, fromSide: bottom, toSide: top }
-  - { from: marketing, to: ops, arrow: none, fromSide: bottom, toSide: top }
+  - { from: marketing, to: rsm, arrow: none }
+  - { from: marketing, to: brm, arrow: none }
+  - { from: marketing, to: ops, arrow: none }
   - { from: rsm, to: agent, arrow: none }
-  - { from: ops, to: front, arrow: none, fromSide: bottom, toSide: top }
-  - { from: ops, to: back, arrow: none, fromSide: bottom, toSide: top }
+  - { from: ops, to: front, arrow: none }
+  - { from: ops, to: back, arrow: none }

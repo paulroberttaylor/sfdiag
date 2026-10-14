@@ -93,7 +93,7 @@ export const theme = {
     pillHeight: 18,
     pillLineHeight: 11.5,
     pillPadX: 10,
-    pillSize: 9.5,
+    pillSize: 10,
     pillBorder: 1.5,
     stepSize: 18,
     stepFill: '#FFFFFF',

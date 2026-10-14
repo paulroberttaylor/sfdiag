@@ -6,6 +6,8 @@ description: >-
   platform events. The events published into the bus are delivered in order via publish
   after commit and then processed in bulk by a flow in a separate synchronous context.
 logo: salesforce
+background: none
+keyColumns: 1
 layout: row
 gap: 180
 keyLabels:
@@ -19,9 +21,9 @@ nodes:
     width: 227
     footerIcons: ["slds:rows/#5A8FDE"]
     children:
-      - { id: pe1, title: Event 1, height: 62 }
-      - { id: pe2, title: Event 2, height: 62 }
-      - { id: pen, title: Event n, height: 62 }
+      - { id: pe1, title: Event 1 }
+      - { id: pe2, title: Event 2 }
+      - { id: pen, title: Event n }
   - id: bus
     title: Event Bus
     icon: slds:work_queue
@@ -29,9 +31,9 @@ nodes:
     width: 227
     footerIcons: ["slds:rows/#5A8FDE"]
     children:
-      - { id: bus1, title: Event 1, height: 62 }
-      - { id: bus2, title: Event 2, height: 62 }
-      - { id: busn, title: Event n, height: 62 }
+      - { id: bus1, title: Event 1 }
+      - { id: bus2, title: Event 2 }
+      - { id: busn, title: Event n }
   - id: flow
     title: Flow
     icon: flow
@@ -39,11 +41,11 @@ nodes:
     width: 227
     footerIcons: ["slds:redo/#F38B61"]
     children:
-      - { id: flow1, title: Event 1..n, height: 62 }
+      - { id: flow1, title: Event 1..n }
 connections:
   - { from: pe1, to: bus1 }
   - { from: pe2, to: bus2 }
   - { from: pen, to: busn }
-  - { from: bus1, to: flow1 }
-  - { from: bus2, to: flow1 }
-  - { from: busn, to: flow1 }
+  - { from: bus1, to: flow1, bundle: true }
+  - { from: bus2, to: flow1, bundle: true }
+  - { from: busn, to: flow1, bundle: true }

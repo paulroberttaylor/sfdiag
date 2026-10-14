@@ -205,7 +205,7 @@ function drawHeader(b: Builder, l: Layout) {
         return;
       }
       items.push(keySymbol(b, e, x, cy, l.input.iconStyle === 'plain'));
-      const t = b.text(e.lines.join(' '), x + (e.icon ? H.keyIcon : 30) + 10, cy, H.keyLabelSize, 400, h.color, 3);
+      const t = b.text(e.lines.join(' '), x + (e.icon ? H.keyIcon : 48) + 10, cy, H.keyLabelSize, 400, h.color, 3);
       if (t) items.push(t);
     });
   }
@@ -227,7 +227,8 @@ function lineShape(b: Builder, p1: { x: number; y: number }, p2: { x: number; y:
 
 function keySymbol(b: Builder, e: KeyEntry, x: number, cy: number, bare = false): string {
   if (e.icon) return b.icon(e.icon, x + H.keyIcon / 2, cy, H.keyIcon, 3, bare);
-  return lineShape(b, { x, y: cy }, { x: x + 30, y: cy }, resolveColor(e.color, X.color), X.width + 0.5, e.line ?? 'solid', 3);
+  const style: Dash = e.line === 'dashdot' ? 'dashed' : e.line ?? 'solid';
+  return lineShape(b, { x, y: cy }, { x: x + 48, y: cy }, resolveColor(e.color, X.color), X.width + 0.5, style, 3);
 }
 
 function drawSymbol(b: Builder, n: LNode, z: number, cardIds: Map<string, string>) {
@@ -297,7 +298,7 @@ function drawNode(b: Builder, n: LNode, depth: number, cardIds: Map<string, stri
       const total = n.footerIcons.length * d + (n.footerIcons.length - 1) * C.footerIconGap;
       let x = n.x + (n.w - total) / 2 + d / 2;
       for (const ic of n.footerIcons) {
-        items.push(b.icon(ic, x, fy + C.footerIconPadY + d / 2, d, zp, n.iconPlain));
+        items.push(b.icon(ic, x, fy + C.footerIconPadY + d / 2, d, zp));
         x += d + C.footerIconGap;
       }
     }

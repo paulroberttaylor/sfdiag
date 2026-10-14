@@ -2,8 +2,9 @@
 # AWS service icons are approximated with SLDS utility glyphs in the AWS category colours.
 title: Data 360 Technical Capability Map
 description: >-
-  This Salesforce Diagrams template is an example capability map which details Data 360
+  This [Salesforce Diagrams](https://architect.salesforce.com/diagrams) template is an example capability map which details Data 360
   technical capabilities and the product mix involved in supporting them.
+keyRows: 2
 key:
   - { label: AWS S3, icon: "slds:bucket/#3F8624" }
   - { label: Dynamo DB, icon: "slds:data_lake_objects/#3B48CC" }
@@ -24,6 +25,7 @@ nodes:
       - { id: ssot, title: Real-Time SSOT, height: 66 }
   - id: services
     frame: none
+    align: start
     children:
       - id: storage
         title: Storage
@@ -48,6 +50,7 @@ nodes:
   - id: lightning
     title: Lightning Platform
     icon: salesforce
+    iconStyle: plain
     attributes: [Setup, Metadata, Apps]
   - id: consumers
     frame: none

@@ -8,6 +8,7 @@ keyLabels:
   slds:slider/navy: Admin
   slds:phone_portrait/indigo: Apps
   slds:insert_tag_field/indigo: Release Mgmt
+keyRows: 1
 nodes:
   - id: steering
     title: Executive Steering Committee
@@ -15,29 +16,33 @@ nodes:
     height: 88
   - id: coe
     title: Center of Excellence
-    justify: space-between
+    justify: center
+    gap: 70
     attributes:
       - Functional Leadership
-      - "    Business outcomes"
-      - "    Change management"
-      - "    Training & development"
+      - "  Business outcomes"
+      - "  Change management"
+      - "  Training & development"
       - Technical Leadership
-      - "    Architectural review"
-      - "    Release management"
-      - "    Data stewardship"
+      - "  Architectural review"
+      - "  Release management"
+      - "  Data stewardship"
     children:
       - id: team1
         title: App Team 1
+        width: 172
         icon: slds:hierarchy/navy
         footer: Delivery Team Capabilities
         footerIcons: [slds:apex/indigo, slds:slider/navy, slds:phone_portrait/indigo, slds:insert_tag_field/indigo]
       - id: team2
         title: App Team 2
+        width: 172
         icon: slds:hierarchy/navy
         footer: Delivery Team Capabilities
         footerIcons: [slds:apex/indigo, slds:slider/navy, slds:phone_portrait/indigo, slds:insert_tag_field/indigo]
       - id: teamn
         title: App Team n
+        width: 172
         icon: slds:hierarchy/navy
         footer: Delivery Team Capabilities
         footerIcons: [slds:apex/indigo, slds:slider/navy, slds:phone_portrait/indigo, slds:insert_tag_field/indigo]
@@ -45,7 +50,7 @@ nodes:
     title: Information Technology (IT)
     justify: center
     children:
-      - { id: governance, title: Data Governance, icon: slds:database/indigo }
-      - { id: security, title: Security, icon: slds:locker_service_console/indigo }
-      - { id: delivery, title: Service Delivery, icon: slds:success/navy }
-      - { id: auth, title: Authentication, icon: slds:lock/navy }
+      - { id: governance, title: Data Governance, icon: slds:database/indigo, width: 182 }
+      - { id: security, title: Security, icon: slds:locker_service_console/indigo, width: 182 }
+      - { id: delivery, title: Service Delivery, icon: slds:success/navy, width: 182 }
+      - { id: auth, title: Authentication, icon: slds:lock/navy, width: 182 }

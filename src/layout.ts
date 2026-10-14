@@ -44,6 +44,8 @@ export interface LNode extends Box {
   footerY: number; // relative y of footer band top (or icons row when no band)
   footerBase: number; // footerY for the natural height; footers follow the bottom when stretched
   iconPlain: boolean;
+  /** footer icons follow the diagram-wide icon style only */
+  footerPlain: boolean;
   // natural size
   nw: number;
   nh: number;
@@ -61,7 +63,7 @@ export interface KeyEntry {
   chip?: { fill: string; stroke: string; text: string };
   arrow?: 'end' | 'start' | 'both' | 'none';
   pill?: boolean;
-  line?: 'solid' | 'dashed' | 'dotted';
+  line?: 'solid' | 'dashed' | 'dotted' | 'dashdot';
   color?: string;
 }
 
@@ -163,6 +165,7 @@ function build(input: NodeInput, parent: LNode | undefined, nodes: Map<string, L
     footerY: 0,
     footerBase: 0,
     iconPlain: (input.iconStyle ?? opts.iconStyle) === 'plain',
+    footerPlain: opts.iconStyle === 'plain',
     nw: 0,
     nh: 0,
     blockW: 0,
@@ -385,6 +388,11 @@ function place(n: LNode, x: number, y: number, w: number, h: number, isRoot = fa
   n.y = y;
   n.w = w;
   n.h = h;
+  // a plain card placed wider or narrower than measured re-wraps its text to fit
+  if (n.framed && n.shape === 'card' && !n.children.length && Math.abs(w - n.nw) > 2 && (n.input.attributes?.length || n.titleLines.length > 1)) {
+    n.input = { ...n.input, width: w };
+    measureNode(n, [], new Map());
+  }
   // footers stay at the bottom of a card that was stretched taller than it needs
   if (n.framed) n.footerY = n.footerBase + Math.max(0, h - n.nh);
   if (!n.children.length) return;
@@ -460,6 +468,16 @@ function place(n: LNode, x: number, y: number, w: number, h: number, isRoot = fa
   });
 }
 
+/** Length of a key line sample: long enough to show its dash pattern and arrowheads. */
+export function keyLineW(e: KeyEntry): number {
+  return e.arrow && e.arrow !== 'none' ? 72 : 48;
+}
+
+/** A key line sample carrying its label in a pill. */
+export function keyPillLineW(label: string): number {
+  return Math.max(170, pillSize(label).w + 70);
+}
+
 function keyEntries(input: DiagramInput, nodes: Map<string, LNode>, opts: LayoutOptions): KeyEntry[] {
   if (input.key === 'none') return [];
   const labels = input.keyLabels ?? {};
@@ -476,7 +494,7 @@ function keyEntries(input: DiagramInput, nodes: Map<string, LNode>, opts: Layout
         color: k.color,
         arrow: k.arrow,
         pill: k.pill,
-        chip: k.chip ? { fill: resolveColor(k.chip.fill, '#FFFFFF'), stroke: resolveColor(k.chip.color, C.border), text: '#000000' } : undefined,
+        chip: k.chip ? { fill: resolveColor(k.chip.fill, '#FFFFFF'), stroke: resolveColor(k.chip.color, C.border), text: resolveColor(k.chip.text, '#000000') } : undefined,
       }),
     );
   }
@@ -557,25 +575,20 @@ function runsFor(plain: string, lines: string[], links: { start: number; end: nu
 }
 
 function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], opts: LayoutOptions): HeaderLayout {
-  const titleAreaW = Math.min(Math.max(width * 0.42, 320), 560);
+  let titleAreaW = Math.min(Math.max(width * 0.42, 320), 560);
   const logo = icon(input.logo, opts);
   const titleWeight = input.header?.bold ? 700 : 400;
-  const titleLines = wrap(input.title, H.titleSize, titleWeight, titleAreaW);
-  const { plain, links } = parseLinks(input.description ?? '');
-  const descLines = plain ? wrap(plain, H.descSize, 400, titleAreaW) : [];
-  const descRuns = runsFor(plain, descLines, links);
   const logoH = (logo ? 44 : 0) + (input.header?.eyebrow ? 20 : 0);
   const titleLH = H.titleSize * 1.3;
-  const textH = H.padY * 2 + logoH + titleLines.length * titleLH + (descLines.length ? 10 + descLines.length * H.descLineHeight : 0);
 
   let key: HeaderLayout['key'];
-  const bulgeMin = H.padX + titleAreaW + 40;
+  let bulgeMin = H.padX + titleAreaW + 40;
   let keyH = 0;
   if (entries.length) {
     const chipW = Math.max(0, ...entries.filter((e) => e.chip).map((e) => measure(e.label, H.keyLabelSize, 600) + 28));
     const textW = (e: KeyEntry) => Math.max(...e.lines.map((l) => measure(l, H.keyLabelSize, 400)));
     const entryW = (e: KeyEntry) =>
-      e.chip ? chipW : e.pill ? Math.max(150, measure(e.label, X.pillSize, 700) + 60) : (e.icon ? H.keyIcon : 30) + 10 + textW(e);
+      e.chip ? chipW : e.pill ? keyPillLineW(e.label) : (e.icon ? H.keyIcon : keyLineW(e)) + 10 + textW(e);
     const availW = width - bulgeMin - 50 - H.keyInset;
     // category chips, then icons and line styles; each group starts its own column and
     // columns fill top-to-bottom, using as few rows as fit (at most 7 columns)
@@ -618,6 +631,16 @@ function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], o
     });
     key = { box: { x: width - H.keyInset - kw, y: H.keyInset, w: kw, h: keyH }, rows, rowH: H.keyRowHeight, top: H.keyPad, entries: order, slots };
   }
+  // a wide key squeezes the title block rather than running over it
+  if (key) {
+    titleAreaW = Math.max(220, Math.min(titleAreaW, key.box.x - 90 - H.padX));
+    bulgeMin = H.padX + titleAreaW + 40;
+  }
+  const titleLines = wrap(input.title, H.titleSize, titleWeight, titleAreaW);
+  const { plain, links } = parseLinks(input.description ?? '');
+  const descLines = plain ? wrap(plain, H.descSize, 400, titleAreaW) : [];
+  const descRuns = runsFor(plain, descLines, links);
+  const textH = H.padY * 2 + logoH + titleLines.length * titleLH + (descLines.length ? 10 + descLines.length * H.descLineHeight : 0);
   const h = Math.max(H.minHeight, textH, keyH + 2 * H.keyInset);
   if (key) {
     // the key panel fills the band's height; rows spread out to use it

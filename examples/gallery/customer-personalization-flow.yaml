@@ -7,7 +7,8 @@ description: >-
   loop with the customer journey.
 layout: row
 gap: 120
-# The engine fills the key column by column; listed so it reads row by row like the original.
+# The key fills column by column; entries are listed so it reads row by row like the original.
+keyColumns: 4
 key:
   - { label: Personalization, icon: slds:groups/indigo }
   - { label: CMS, icon: slds:knowledge_base/navy }
@@ -24,7 +25,7 @@ key:
 nodes:
   - id: experience
     title: Experience
-    icon: desktop
+    icon: slds:desktop_and_phone/blue
     attributes: [Community, Commerce, Payments]
     layout: column
     footer: Personalized Digital Experiences

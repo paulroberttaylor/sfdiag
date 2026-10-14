@@ -107,11 +107,15 @@ export const KeyItem = z
   .object({
     label: z.string(),
     icon: z.string().optional(),
-    line: z.enum(['solid', 'dashed', 'dotted']).optional(),
+    line: z.enum(['solid', 'dashed', 'dotted', 'dashdot']).optional(),
     color: Color.optional(),
     arrow: z.enum(['end', 'start', 'both', 'none']).optional().describe('Arrowheads on a line sample.'),
     pill: z.boolean().optional().describe('Draw the label in a pill on a long line sample.'),
-    chip: z.object({ fill: Color.optional(), color: Color.optional() }).strict().optional().describe('Draw the entry as a coloured chip.'),
+    chip: z
+      .object({ fill: Color.optional(), color: Color.optional(), text: Color.optional() })
+      .strict()
+      .optional()
+      .describe('Draw the entry as a coloured chip (fill, border colour, text colour).'),
   })
   .strict();
 

@@ -4,6 +4,8 @@ title: Loyalty management capability map
 description: >-
   This diagram details business capabilities for a loyalty management solution with high-level
   product positioning powered by the Salesforce Customer 360.
+keyRows: 3
+width: 1400
 key:
   - { label: Customer 360 Audiences, icon: "slds:people_score/orange" }
   - { label: Personalization, icon: "slds:groups/indigo" }
@@ -25,52 +27,66 @@ key:
   - { label: Identity, icon: "slds:identity/indigo" }
   - { label: Workflow, icon: "slds:flow/indigo" }
 nodes:
-  - id: channels
+  - id: body
     frame: none
+    layout: column
     children:
-      - id: marketing
-        title: Marketing
-        icon: marketing-cloud
-        attributes: [Interaction & behavior capture]
-        footerIcons: ["slds:people_score/orange", "slds:contact/orange", "slds:user_role/orange"]
-      - id: experience
-        title: Experience & Engagement
-        icon: desktop
-        attributes: [Loyalty influenced headless commerce]
-        footerIcons: [slack, commerce-cloud, sales-cloud, "slds:groups/indigo", "slds:user/indigo", "slds:desktop_and_phone/indigo", "slds:phone_portrait/indigo", "slds:robot/indigo", "slds:record_create/#F4B400"]
-      - id: service
-        title: Service
-        icon: service-cloud
-        attributes: [Case Management, Loyalty service console]
-  - id: loyalty
-    title: Loyalty Management Capabilities
-    icon: salesforce
-    justify: space-between
-    footer: Platform Services
-    footerIcons: ["slds:tableau/navy", "slds:apps/navy", "slds:database/indigo", "slds:target/indigo", "slds:shield/indigo", "slds:identity/indigo", "slds:flow/indigo"]
-    children:
-      - id: admin
-        title: Loyalty Administration
-        icon: "slds:card_details/navy"
-        attributes: ["Program, member, partner management", Promotion admin, Rewarrds and benefits management, Voucher management, Batch management]
-      - id: processes
-        title: Loyalty Processes
-        icon: "slds:card_details/navy"
-        attributes: [Accrual & redemption, Points expiry, Tier, Promotion orchestration, Decision tables]
-      - id: intelligent
-        title: Intelligent Loyalty
-        icon: "slds:einstein/indigo"
-        attributes: [Promotion recommendation, Promotion effectiveness, Liability & fraud management, Personalized rewards]
-  - id: integrations
-    title: Integrations
-    icon: mulesoft
-  - id: sources
-    frame: none
-    children:
-      - id: industry
-        title: Industry Data Sources
-        icon: industries
-        footerIcons: ["slds:settings/#4A2165", "slds:company/#4A2165", "slds:broadcast/#4A2165", "slds:builder/#4A2165", "slds:education/#4A2165", "slds:light_bulb/#4A2165", "slds:screen/#4A2165", "slds:home/#4A2165", "slds:co_insurance/#4A2165", "slds:heart/#4A2165", "slds:settings/#4A2165", "slds:robot/#4A2165", "slds:world/#4A2165", "slds:user/#4A2165", "slds:form/#4A2165", "slds:plane/#4A2165"]
-      - id: supplier
-        title: Supplier & Partner Ecosystem
-        attributes: [Inventory, Offer]
+      - id: channels
+        frame: none
+        children:
+          - id: marketing
+            title: Marketing
+            icon: "slds:search/orange"
+            grow: 1
+            attributes: [Interaction & behavior capture]
+            footerIcons: ["slds:people_score/orange", "slds:contact/orange", "slds:user_role/orange"]
+          - id: experience
+            title: Experience & Engagement
+            icon: "slds:desktop_and_phone/blue"
+            grow: 2.7
+            attributes: [Loyalty influenced headless commerce]
+            footerIcons: [slack, commerce-cloud, sales-cloud, "slds:groups/indigo", "slds:user/indigo", "slds:desktop_and_phone/indigo", "slds:phone_portrait/indigo", "slds:robot/indigo", "slds:record_create/#F4B400"]
+          - id: service
+            title: Service
+            icon: "slds:heart/#E3445F"
+            iconStyle: plain
+            grow: 1
+            attributes: [Case Management, Loyalty service console]
+      - id: loyalty
+        title: Loyalty Management Capabilities
+        icon: salesforce
+        justify: space-between
+        footer: Platform Services
+        footerIcons: ["slds:tableau/navy", "slds:apps/navy", "slds:database/indigo", "slds:target/indigo", "slds:shield/indigo", "slds:identity/indigo", "slds:flow/indigo"]
+        children:
+          - id: admin
+            title: Loyalty Administration
+            icon: "slds:card_details/navy"
+            width: 250
+            attributes: ["Program, member, partner management", Promotion admin, Rewarrds and benefits management, Voucher management, Batch management]
+          - id: processes
+            title: Loyalty Processes
+            icon: "slds:card_details/navy"
+            width: 250
+            attributes: [Accrual & redemption, Points expiry, Tier, Promotion orchestration, Decision tables]
+          - id: intelligent
+            title: Intelligent Loyalty
+            icon: "slds:einstein/indigo"
+            width: 250
+            attributes: [Promotion recommendation, Promotion effectiveness, Liability & fraud management, Personalized rewards]
+      - id: integrations
+        title: Integrations
+        icon: mulesoft
+        iconStyle: plain
+      - id: sources
+        frame: none
+        children:
+          - id: industry
+            title: Industry Data Sources
+            icon: industries
+            grow: 3.7
+            footerIcons: ["slds:settings/#4A2165", "slds:company/#4A2165", "slds:broadcast/#4A2165", "slds:builder/#4A2165", "slds:education/#4A2165", "slds:light_bulb/#4A2165", "slds:screen/#4A2165", "slds:home/#4A2165", "slds:co_insurance/#4A2165", "slds:heart/#4A2165", "slds:settings/#4A2165", "slds:robot/#4A2165", "slds:world/#4A2165", "slds:user/#4A2165", "slds:form/#4A2165", "slds:plane/#4A2165"]
+          - id: supplier
+            title: Supplier & Partner Ecosystem
+            grow: 1
+            attributes: [Inventory, Offer]

@@ -81,7 +81,7 @@ function chooseSides(a: LNode, b: LNode, c: ConnectionInput, all: LNode[]): [Sid
 }
 
 function sideRange(n: LNode, s: Side): [number, number] {
-  const inset = theme.card.radius + 8;
+  const inset = theme.card.radius + 1;
   return horizontalSide(s) ? [n.y + inset, n.y + n.h - inset] : [n.x + inset, n.x + n.w - inset];
 }
 
@@ -449,7 +449,7 @@ function commonDirection(a: LNode, bs: LNode[]): Dir | undefined {
  * Tree-style bundles: unlabelled connectors fanning out of (or into) one node share a
  * trunk and a bus line, like an org chart, instead of each taking its own port.
  */
-function routeBundles(routes: Route[]): Set<Route> {
+function routeBundles(routes: Route[], framed: LNode[]): Set<Route> {
   const done = new Set<Route>();
   const eligible = routes.filter((r) => !r.conn.label && !r.conn.step && r.conn.bundle !== false);
   const groupBy = (key: (r: Route) => string) => {
@@ -458,9 +458,12 @@ function routeBundles(routes: Route[]): Set<Route> {
     return [...m.values()].filter((g) => g.length >= 2);
   };
   const sideOf: Record<Dir, [Side, Side]> = { down: ['bottom', 'top'], up: ['top', 'bottom'], right: ['right', 'left'], left: ['left', 'right'] };
-  const build = (group: Route[], hub: LNode, others: LNode[], out: boolean) => {
+  const build = (group: Route[], hub: LNode, others: LNode[], out: boolean, obstacles: LNode[]) => {
     const dir = commonDirection(hub, others);
     if (!dir) return;
+    // automatic bundling is for org-chart fan-outs; anything else must ask with bundle: true
+    const asked = group.every((r) => r.conn.bundle === true);
+    if (!asked && !(out && dir === 'down')) return;
     const [hubSide, otherSide] = out ? sideOf[dir] : [sideOf[dir][0], sideOf[dir][1]];
     const vertical = dir === 'down' || dir === 'up';
     const hubPt = portPoint(hub, hubSide, vertical ? hub.x + hub.w / 2 : hub.y + hub.h / 2);
@@ -470,11 +473,20 @@ function routeBundles(routes: Route[]): Set<Route> {
     const hubC = vertical ? hubPt.y : hubPt.x;
     const closest = dir === 'down' || dir === 'right' ? Math.min(...reach) : Math.max(...reach);
     const bus = (hubC + closest) / 2;
-    group.forEach((r, i) => {
+    const paths = group.map((_, i) => {
       const p = near[i];
-      const path = vertical
+      return vertical
         ? [hubPt, { x: hubPt.x, y: bus }, { x: p.x, y: bus }, p]
         : [hubPt, { x: bus, y: hubPt.y }, { x: bus, y: p.y }, p];
+    });
+    // a bus that would cut through another card is worse than separate lines
+    const skip = new Set<LNode>([hub, ...others, ...ancestors(hub), ...others.flatMap(ancestors)]);
+    const blocked = paths.some((path) =>
+      path.slice(1).some((b, k) => obstacles.some((o) => !skip.has(o) && segHitsBox(path[k], b, { x: o.x + 1, y: o.y + 1, w: o.w - 2, h: o.h - 2 }))),
+    );
+    if (blocked) return;
+    group.forEach((r, i) => {
+      const path = paths[i];
       r.points = simplify(out ? path : [...path].reverse());
       r.fromSide = out ? hubSide : otherSide;
       r.toSide = out ? otherSide : hubSide;
@@ -482,8 +494,8 @@ function routeBundles(routes: Route[]): Set<Route> {
     });
   };
   // fan-outs first (org charts), then fan-ins (several publishers into one bus)
-  for (const g of groupBy((r) => r.from.id)) build(g, g[0].from, g.map((r) => r.to), true);
-  for (const g of groupBy((r) => r.to.id)) build(g, g[0].to, g.map((r) => r.from), false);
+  for (const g of groupBy((r) => r.from.id)) build(g, g[0].from, g.map((r) => r.to), true, framed);
+  for (const g of groupBy((r) => r.to.id)) build(g, g[0].to, g.map((r) => r.from), false, framed);
   return done;
 }
 
@@ -495,7 +507,7 @@ export function routeAll(layout: Layout): Route[] {
     const [fromSide, toSide] = chooseSides(from, to, conn, [...layout.nodes.values()]);
     routes.push({ conn, from, to, fromSide, toSide, points: [] });
   }
-  const bundled = routeBundles(routes);
+  const bundled = routeBundles(routes, [...layout.nodes.values()].filter((n) => n.framed));
   const ports = assignPorts(routes.filter((r) => !bundled.has(r)));
   const framed = [...layout.nodes.values()].filter((n) => n.framed);
   const bounds: Box = { x: 2, y: layout.header.h + 4, w: layout.width - 4, h: layout.height - layout.header.h - 6 };

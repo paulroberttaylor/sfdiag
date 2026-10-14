@@ -1,16 +1,21 @@
 # Recreation of the official "Data 360 Marketing" system landscape (Salesforce Architects template)
 title: Data 360 Marketing
 description: >-
-  This Salesforce Diagrams template is an example system landscape - a Customer 360
+  This [Salesforce Diagrams](https://architect.salesforce.com/diagrams) template is an example system landscape - a Customer 360
   Architecture showing how different components within an integrated Salesforce
   solution communicate with each other using native connectors
 logo: salesforce
 classes:
   nonsf: { label: Non-Salesforce, fill: "#DDE1EA", color: "#5C5C5C" }
   sf: { label: Salesforce, fill: "#FFFFFF", color: "#5C5C5C" }
-keyLabels:
-  dashed: Custom Integration
-  solid: Native Integration
+iconStyle: plain
+cardWidth: 250
+keyColumns: 2
+key:
+  - { label: Non-Salesforce, chip: { fill: "#DDE1EA", color: "#5C5C5C" } }
+  - { label: Salesforce, chip: { fill: "#FFFFFF", color: "#5C5C5C" } }
+  - { label: Custom Integration, line: dashed, arrow: both }
+  - { label: Native Integration, line: solid, arrow: both }
 layout: row
 gap: 140
 nodes:
@@ -61,29 +66,29 @@ nodes:
         icon: data-cloud
         layout: column
         align: center
-        width: 340
+        width: 300
         gap: 70
         footer: Collect & Unify Customer Data
         children:
           - id: ingress
             class: sf
             title: Data Ingress
-            width: 200
+            width: 180
             attributes: [Batch and Streaming, Canonical Data Model]
           - id: idres
             class: sf
             title: Identity Resolution
-            width: 200
+            width: 180
             attributes: [Unified Profile, Cross Device Identity]
           - id: segmentation
             class: sf
             title: Segmentation & Activation
-            width: 200
+            width: 180
             attributes: [Drag and Drop Segmentation, AppExchange Support]
       - id: engagement
         class: sf
         title: Engagement
-        width: 250
+        width: 220
         icon: slds:user_role/orange
         attributes:
           - Marketing Automation

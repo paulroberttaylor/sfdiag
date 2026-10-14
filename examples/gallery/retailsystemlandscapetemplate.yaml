@@ -1,16 +1,20 @@
 # Recreation of the official "Retail System Landscape" template (Salesforce Architects)
 title: Retail System Landscape
 description: >-
-  This Salesforce Diagrams template is an example system landscape - showing a B2C
+  This [Salesforce Diagrams](https://architect.salesforce.com/diagrams) template is an example system landscape - showing a B2C
   Commerce and Marketing solution, indicating the mix of Salesforce products and other
   technologies involved in the implementation.
 lineColor: "#0B2F5C"
 classes:
   nonsf: { label: Non-Salesforce, fill: "#706E6B", color: "#706E6B", text: "#FFFFFF" }
   sf: { label: Salesforce, fill: "#F3F3F3", color: "#C9C9C9" }
-keyLabels:
-  solid: Native Connection
-  dashed: Custom Integration
+cardWidth: 175
+keyColumns: 2
+key:
+  - { label: Non-Salesforce, chip: { fill: "#706E6B", color: "#706E6B" } }
+  - { label: Salesforce, chip: { fill: "#F3F3F3", color: "#C9C9C9" } }
+  - { label: "Native\nConnection", line: solid, arrow: both, pill: true }
+  - { label: "Custom\nIntegration", line: dashed, arrow: both, pill: true }
 layout: row
 gap: 90
 nodes:
@@ -29,7 +33,6 @@ nodes:
     class: sf
     title: Mulesoft
     icon: mulesoft
-    width: 180
     attributes: [Experience APIs, Process APIs, System APIs, Batch uploads, ETL]
   - id: clouds
     frame: none
@@ -57,7 +60,7 @@ nodes:
     color: black
     fill: "#F3F3F3"
     layout: column
-    width: 220
+    iconStyle: plain
     children:
       - id: sales
         class: sf
