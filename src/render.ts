@@ -106,25 +106,26 @@ function drawHeader(svg: Svg, l: Layout) {
   const R = Math.max(h.arcR, h.h / 2 + 1);
   const xTop = h.bulgeX - (R - Math.sqrt(R * R - (h.h / 2) ** 2));
   svg.push(`<path d="M0 0H${r2(xTop)}A${r2(R)} ${r2(R)} 0 0 1 ${r2(xTop)} ${r2(h.h)}V${r2(h.h + 1)}H0Z" fill="#FFFFFF"/>`);
-  if (h.logo) svg.icon(h.logo, h.titleX + 22, h.logoY, 34);
-  if (h.eyebrow) svg.text(h.eyebrow.toUpperCase(), h.titleX, h.eyebrowY, 12, 700, h.color);
-  h.titleLines.forEach((t, i) => svg.text(t, h.titleX, h.titleY + i * H.titleSize * 1.3, H.titleSize, h.titleWeight, h.color));
+  if (h.logo) svg.icon(h.logo, h.logoX, h.logoY, h.logoSize);
+  if (h.eyebrow) svg.text(h.eyebrow.toUpperCase(), h.titleX, h.eyebrowY, h.eyebrowSize, h.eyebrowSize > 12 ? 600 : 700, h.color);
+  h.titleLines.forEach((t, i) => svg.text(t, h.titleX, h.titleY + i * h.titleSize * 1.3, h.titleSize, h.titleWeight, h.color));
   h.descRuns.forEach((runs, i) => {
     const cy = h.descY + i * H.descLineHeight;
     let x = h.titleX;
     for (const r of runs) {
-      const w = measure(r.text, H.descSize, 400);
+      const w = measure(r.text, H.descSize, 400, h.descItalic);
       if (r.url) {
         svg.push(`<a href="${esc(r.url)}">`);
-        svg.text(r.text, x, cy, H.descSize, 400, '#0176D3');
+        svg.text(r.text, x, cy, H.descSize, 400, '#0176D3', 'start', h.descItalic);
         svg.push(`<line x1="${r2(x)}" y1="${r2(cy + H.descSize * 0.55)}" x2="${r2(x + w)}" y2="${r2(cy + H.descSize * 0.55)}" stroke="#0176D3" stroke-width="0.7"/></a>`);
-      } else svg.text(r.text, x, cy, H.descSize, 400, h.color);
+      } else svg.text(r.text, x, cy, H.descSize, 400, h.color, 'start', h.descItalic);
       x += w;
     }
   });
   if (h.key) {
     const k = h.key;
     svg.push(`<rect x="${r2(k.box.x)}" y="${r2(k.box.y)}" width="${r2(k.box.w)}" height="${r2(k.box.h)}" rx="10" fill="#FFFFFF"/>`);
+    if (k.title) svg.text(k.title, k.box.x + H.keyPad, k.box.y + H.keyPad + 4, 11, 700, h.color);
     const chipW = Math.max(0, ...k.entries.filter((e) => e.chip).map((e) => measure(e.label, H.keyLabelSize, 600) + 24));
     const bare = l.input.iconStyle === 'plain';
     k.entries.forEach((e, i) => {

@@ -75,6 +75,11 @@ export interface HeaderLayout extends Box {
   eyebrow?: string;
   eyebrowY: number;
   titleWeight: 400 | 700;
+  titleSize: number;
+  eyebrowSize: number;
+  descItalic: boolean;
+  logoX: number;
+  logoSize: number;
   band: string;
   color: string;
   titleLines: string[];
@@ -88,6 +93,7 @@ export interface HeaderLayout extends Box {
   arcR: number;
   key?: {
     box: Box;
+    title?: string;
     rows: number;
     rowH: number;
     top: number;
@@ -632,11 +638,19 @@ function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], o
   let titleAreaW = Math.min(Math.max(width * 0.42, 320), 560);
   const logo = icon(input.logo, opts);
   const titleWeight = input.header?.bold ? 700 : 400;
-  const logoH = (logo ? 44 : 0) + (input.header?.eyebrow ? 20 : 0);
-  const titleLH = H.titleSize * 1.3;
+  const titleSize = input.header?.titleSize ?? H.titleSize;
+  // a side logo sits left of the title block (developer-docs style) instead of above it
+  const side = !!logo && input.header?.logoPosition === 'side';
+  const logoSize = side ? 84 : 34;
+  const titleX = side ? H.padX + logoSize + 22 : H.padX;
+  // the eyebrow grows with a large title (developer-docs headers set it almost title-sized)
+  const eyebrowSize = titleSize > H.titleSize ? Math.round(titleSize * 0.62) : 12;
+  const logoH = (logo && !side ? 44 : 0) + (input.header?.eyebrow ? eyebrowSize + 8 : 0);
+  const titleLH = titleSize * 1.3;
+  const keyTitleH = input.keyTitle ? 22 : 0;
 
   let key: HeaderLayout['key'];
-  let bulgeMin = H.padX + titleAreaW + 40;
+  let bulgeMin = titleX + titleAreaW + 40;
   let keyH = 0;
   if (entries.length) {
     const chipW = Math.max(0, ...entries.filter((e) => e.chip).map((e) => measure(e.label, H.keyLabelSize, 600) + 28));
@@ -646,7 +660,8 @@ function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], o
     const availW = width - bulgeMin - 50 - H.keyInset;
     // category chips, then icons and line styles; each group starts its own column and
     // columns fill top-to-bottom, using as few rows as fit (at most 7 columns)
-    const groups = [entries.filter((e) => e.chip), entries.filter((e) => !e.chip)].filter((g) => g.length);
+    const chipsThenIcons = [entries.filter((e) => e.chip), entries.filter((e) => !e.chip)];
+    const groups = (input.keyOrder === 'icons-first' ? chipsThenIcons.reverse() : chipsThenIcons).filter((g) => g.length);
     const pack = (rows: number) => {
       const cols: KeyEntry[][] = [];
       for (const g of groups) {
@@ -670,7 +685,7 @@ function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], o
     }
     const packed = pack(rows);
     rows = Math.max(...packed.cols.map((c) => c.length));
-    keyH = 2 * H.keyPad + H.keyIcon + (rows - 1) * H.keyRowHeight;
+    keyH = 2 * H.keyPad + keyTitleH + H.keyIcon + (rows - 1) * H.keyRowHeight;
     const kw = Math.max(packed.w, Math.min(availW, width * 0.38));
     const spare = Math.min(80, (kw - packed.w) / Math.max(1, packed.cols.length - 1));
     const slots: { x: number; row: number }[] = [];
@@ -683,25 +698,25 @@ function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], o
       });
       cx += packed.widths[ci] + H.keyColGap * 2 + (packed.cols.length > 1 ? spare : 0);
     });
-    key = { box: { x: width - H.keyInset - kw, y: H.keyInset, w: kw, h: keyH }, rows, rowH: H.keyRowHeight, top: H.keyPad, entries: order, slots };
+    key = { box: { x: width - H.keyInset - kw, y: H.keyInset, w: kw, h: keyH }, title: input.keyTitle, rows, rowH: H.keyRowHeight, top: H.keyPad, entries: order, slots };
   }
   // a wide key squeezes the title block rather than running over it
   if (key) {
-    titleAreaW = Math.max(220, Math.min(titleAreaW, key.box.x - 90 - H.padX));
-    bulgeMin = H.padX + titleAreaW + 40;
+    titleAreaW = Math.max(220, Math.min(titleAreaW, key.box.x - 90 - titleX));
   }
-  const titleLines = wrap(input.title, H.titleSize, titleWeight, titleAreaW);
+  bulgeMin = titleX + titleAreaW + 40;
+  const titleLines = wrap(input.title, titleSize, titleWeight, titleAreaW);
   const { plain, links } = parseLinks(input.description ?? '');
   const descLines = plain ? wrap(plain, H.descSize, 400, titleAreaW) : [];
   const descRuns = runsFor(plain, descLines, links);
   const textH = H.padY * 2 + logoH + titleLines.length * titleLH + (descLines.length ? 10 + descLines.length * H.descLineHeight : 0);
-  const h = Math.max(H.minHeight, textH, keyH + 2 * H.keyInset);
+  const h = Math.max(H.minHeight, textH, keyH + 2 * H.keyInset, side ? logoSize + 2 * H.padY : 0);
   if (key) {
     // the key panel fills the band's height; rows spread out to use it
     key.box.h = h - 2 * H.keyInset;
-    const inner = key.box.h - 2 * H.keyPad - H.keyIcon;
+    const inner = key.box.h - 2 * H.keyPad - keyTitleH - H.keyIcon;
     key.rowH = key.rows > 1 ? Math.min(H.keyRowHeight * 1.5, inner / (key.rows - 1)) : 0;
-    key.top = (key.box.h - H.keyIcon - (key.rows - 1) * key.rowH) / 2;
+    key.top = keyTitleH + (key.box.h - keyTitleH - H.keyIcon - (key.rows - 1) * key.rowH) / 2;
   }
   const contentTop = (h - (textH - 2 * H.padY)) / 2;
   const titleY = contentTop + logoH + titleLH / 2;
@@ -714,14 +729,19 @@ function layoutHeader(input: DiagramInput, width: number, entries: KeyEntry[], o
     key,
     eyebrow: input.header?.eyebrow,
     titleWeight,
-    logoY: titleY - titleLH / 2 - (input.header?.eyebrow ? 44 : 24),
-    eyebrowY: titleY - titleLH / 2 - 12,
+    titleSize,
+    eyebrowSize,
+    descItalic: !!input.header?.italicDescription,
+    logoX: side ? H.padX + logoSize / 2 : H.padX + 22,
+    logoSize,
+    logoY: side ? h / 2 : titleY - titleLH / 2 - (input.header?.eyebrow ? 44 : 24),
+    eyebrowY: titleY - titleLH / 2 - eyebrowSize / 2 - 2,
     band: resolveColor(input.header?.band, H.band),
     color: resolveColor(input.header?.color, H.text),
     titleLines,
     descLines,
     descRuns,
-    titleX: H.padX,
+    titleX,
     titleY,
     descY: titleY + (titleLines.length - 1) * titleLH + titleLH / 2 + 10 + H.descLineHeight / 2,
     bulgeX: key ? Math.min(Math.max(bulgeMin, width * 0.5), key.box.x - 40) : Math.max(bulgeMin, width * 0.5),

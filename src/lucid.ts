@@ -179,9 +179,9 @@ function drawHeader(b: Builder, l: Layout) {
   b.shapes.find((s) => s.id === arc)!.vertices = verts.map((v) => ({ x: r2(Math.min(1, Math.max(0, v.x / bw))), y: r2(v.y / h.h) }));
   items.push(arc);
 
-  if (h.logo) items.push(b.icon(h.logo, h.titleX + 22, h.logoY, 34, 2));
-  if (h.eyebrow) items.push(b.text(h.eyebrow.toUpperCase(), h.titleX, h.eyebrowY, 12, 700, h.color, 2)!);
-  h.titleLines.forEach((t, i) => items.push(b.text(t, h.titleX, h.titleY + i * H.titleSize * 1.3, H.titleSize, h.titleWeight, h.color, 2)!));
+  if (h.logo) items.push(b.icon(h.logo, h.logoX, h.logoY, h.logoSize, 2));
+  if (h.eyebrow) items.push(b.text(h.eyebrow.toUpperCase(), h.titleX, h.eyebrowY, h.eyebrowSize, 700, h.color, 2)!);
+  h.titleLines.forEach((t, i) => items.push(b.text(t, h.titleX, h.titleY + i * h.titleSize * 1.3, h.titleSize, h.titleWeight, h.color, 2)!));
   h.descLines.forEach((t, i) => items.push(b.text(t, h.titleX, h.descY + i * H.descLineHeight, H.descSize, 400, h.color, 2)!));
 
   if (h.key) {

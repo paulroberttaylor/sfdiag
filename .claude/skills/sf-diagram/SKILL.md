@@ -111,7 +111,16 @@ For step-by-step flows use symbols and categories (see `examples/order-of-execut
 classes:                                   # categories → coloured cards + key chips
   execute: { label: Execute, fill: "#E0F3E0", color: "#67B4A0" }
   validate: { label: Validate, fill: "#D1F6FF", color: "#6FC3D8" }
-header: { band: "#413E73", color: "#2E2B55", eyebrow: Salesforce Platform, bold: true }
+header:                                    # developer-docs style header
+  band: "#413E73"
+  color: "#2E2B55"
+  eyebrow: Salesforce Platform             # grows with a large titleSize
+  bold: true
+  logoPosition: side                       # big logo beside the title (default: small, above)
+  titleSize: 32                            # default 22
+  italicDescription: true
+keyTitle: "LEGEND:"                        # heading in the key panel
+keyOrder: icons-first                      # default chips-first
 lineColor: "#3E3A72"                       # default connector colour
 road: "#FBF9C9"                            # winding band behind the rows
 nodes:

@@ -192,12 +192,17 @@ export const Diagram = z
         color: Color.optional().describe('Title and description colour.'),
         eyebrow: z.string().optional().describe('Small uppercase line above the title.'),
         bold: z.boolean().optional().describe('Bold title (developer-docs style) instead of the light Architects style.'),
+        logoPosition: z.enum(['above', 'side']).optional().describe('Logo above the title (default) or large, beside the title block (developer-docs style).'),
+        titleSize: z.number().min(14).max(48).optional().describe('Title font size in px (default 22).'),
+        italicDescription: z.boolean().optional().describe('Italic description text.'),
       })
       .strict()
       .optional(),
     lineColor: Color.optional().describe('Default connector colour.'),
     keyRows: z.number().int().min(1).max(12).optional().describe('Force the number of key rows.'),
     keyColumns: z.number().int().min(1).max(12).optional().describe('Force the number of key columns.'),
+    keyTitle: z.string().optional().describe('Heading at the top-left of the key panel, e.g. "LEGEND:".'),
+    keyOrder: z.enum(['chips-first', 'icons-first']).optional().describe('Key column order: category chips first (default) or icons first.'),
     keyFlow: z.enum(['columns', 'rows']).optional().describe('Fill the key column by column (default) or row by row.'),
     iconStyle: z.enum(['circle', 'plain']).optional().describe('Default icon style for every node and the key.'),
     cardWidth: z.number().min(80).max(800).optional().describe('Default width of leaf cards; titles and attributes wrap to fit.'),

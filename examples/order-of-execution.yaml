@@ -13,6 +13,11 @@ header:
   color: "#2E2B55"
   eyebrow: Salesforce Platform
   bold: true
+  logoPosition: side
+  titleSize: 32
+  italicDescription: true
+keyTitle: "LEGEND:"
+keyOrder: icons-first
 lineColor: "#3E3A72"
 road: "#FBF9C9"
 gap: 40
