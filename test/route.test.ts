@@ -66,3 +66,10 @@ it('a sideways exit into a bottom entry makes a single clean L', () => {
   const r = routes.find((x) => x.conn.from === 's2c' && x.conn.to === 'd2')!;
   expect(r.points).toHaveLength(3);
 });
+
+it('a decision branches down to side cards from its left and right points', () => {
+  const { routes } = compileExample('approval-workflow.yaml');
+  const side = (to: string) => routes.find((x) => x.conn.from === 'review' && x.conn.to === to)!;
+  expect([side('approve').fromSide, side('approve').toSide]).toEqual(['left', 'top']);
+  expect([side('reject').fromSide, side('reject').toSide]).toEqual(['right', 'top']);
+});

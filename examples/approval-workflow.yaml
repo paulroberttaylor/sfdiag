@@ -1,0 +1,32 @@
+title: Simple Approval Workflow
+description: >-
+  A requester submits a request for review. The request is approved or rejected,
+  and the requester is notified of the outcome.
+logo: salesforce
+nodes:
+  - id: workflow
+    frame: none
+    layout: column
+    align: center
+    gap: 60
+    children:
+      - { id: start, shape: pill, title: Start, width: 120 }
+      - { id: submit, title: Submit Request, icon: user, width: 220 }
+      - { id: review, shape: decision, title: Approved?, width: 160 }
+      - id: outcomes
+        frame: none
+        layout: row
+        gap: 120
+        children:
+          - { id: approve, title: Approve Request, icon: "slds:check", width: 200 }
+          - { id: reject, title: Reject Request, icon: "slds:close", width: 200 }
+      - { id: notify, title: Notify Requester, icon: flow, width: 220 }
+      - { id: end, shape: pill, title: End, width: 120 }
+connections:
+  - { from: start, to: submit }
+  - { from: submit, to: review, label: Review }
+  - { from: review, to: approve, label: Yes }
+  - { from: review, to: reject, label: No }
+  - { from: approve, to: notify }
+  - { from: reject, to: notify }
+  - { from: notify, to: end }

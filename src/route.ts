@@ -62,6 +62,11 @@ function chooseSides(a: LNode, b: LNode, c: ConnectionInput, all: LNode[]): [Sid
     const skip = new Set<LNode>([a, b, ...ancestors(a), ...ancestors(b)]);
     const blocked = all.some((n) => !skip.has(n) && n.framed && n.x < x1 && n.x + n.w > x0 && n.y < oy1 && n.y + n.h > oy0);
     if (blocked) fs = ts = 'top';
+  } else if (a.shape === 'decision' && !c.fromSide && Math.abs(bcx - acx) > a.w / 4 && b.y >= a.y + a.h) {
+    // a decision branching down to a card off to one side leaves from that side's point and
+    // turns down into it, as flowcharts draw their yes/no branches
+    fs = bcx < acx ? 'left' : 'right';
+    ts = 'top';
   } else if (ox1 - ox0 >= 16) {
     fs = acy < bcy ? 'bottom' : 'top';
     ts = acy < bcy ? 'top' : 'bottom';
