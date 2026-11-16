@@ -3,6 +3,7 @@ description: >-
   Opportunity validation rule, read as a decision flow. An Enterprise opportunity
   with a discount over 20% can only be saved once the discount is approved.
   Users with the Bypass Validation permission skip the check.
+logo: salesforce
 classes:
   ok: { label: Record saves, fill: "#E0F3E0", color: "#67B4A0" }
   block: { label: Save blocked, fill: "#FDE2E1", color: "#C23934" }

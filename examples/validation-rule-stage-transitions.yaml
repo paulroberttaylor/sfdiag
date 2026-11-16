@@ -2,6 +2,7 @@ title: Opportunity Stage Transitions
 description: >-
   Allowed stage changes, combined from five validation rules that use ISCHANGED and
   PRIORVALUE on StageName. Any move not drawn here is blocked by one of those rules.
+logo: salesforce
 classes:
   open: { label: Open stage, fill: "#D1F6FF", color: "#6FC3D8" }
   won: { label: Closed and locked, fill: "#E0F3E0", color: "#67B4A0" }

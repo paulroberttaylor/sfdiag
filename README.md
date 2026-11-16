@@ -122,6 +122,17 @@ yes/no branches, with no routing hints.
 at sequence positions, decisions branching across lanes. Add `orientation: vertical` to
 run the lanes as columns.
 
+| | |
+|---|---|
+| ![Validation rule decision flow](docs/images/validation-rule-decision-flow.png) | ![Validation rule stage transitions](docs/images/validation-rule-stage-transitions.png) |
+
+`examples/validation-rule-decision-flow.yaml` and
+`examples/validation-rule-stage-transitions.yaml` show Salesforce validation rules for
+people who don't read formulas, for example when moving off the platform. The first
+draws one rule's formula as yes/no questions, with one row per condition and a single
+path ending in the error. The second merges several `ISCHANGED`/`PRIORVALUE` rules on
+`StageName` into one diagram of the allowed stage moves. Both use sample rules.
+
 ### Reference gallery recreations
 
 `examples/gallery/` holds 20 recreations of diagrams from the
