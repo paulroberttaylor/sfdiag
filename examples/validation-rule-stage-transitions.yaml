@@ -1,0 +1,41 @@
+title: Opportunity Stage Transitions
+description: >-
+  Allowed stage changes, combined from five validation rules that use ISCHANGED and
+  PRIORVALUE on StageName. Any move not drawn here is blocked by one of those rules.
+classes:
+  open: { label: Open stage, fill: "#D1F6FF", color: "#6FC3D8" }
+  won: { label: Closed and locked, fill: "#E0F3E0", color: "#67B4A0" }
+  lost: { label: Closed but can reopen, fill: "#FDE2E1", color: "#C23934" }
+keyLabels:
+  solid: Normal stage move
+  dashed: Allowed from any open stage
+  dotted: Reopen (Sales Ops permission only)
+nodes:
+  - id: main
+    frame: none
+    layout: column
+    gap: 90
+    children:
+      - id: openrow
+        frame: none
+        gap: 90
+        align: center
+        children:
+          - { id: prospect, class: open, title: Prospecting, width: 170 }
+          - { id: qual, class: open, title: Qualification, width: 170 }
+          - { id: prop, class: open, title: Proposal, width: 170 }
+          - { id: nego, class: open, title: Negotiation, width: 170 }
+      - id: closedrow
+        frame: none
+        gap: 90
+        align: center
+        children:
+          - { id: lost, class: lost, title: Closed Lost, width: 230, attributes: ["Needs Loss_Reason__c (Opp_Require_Loss_Reason)", "Reopen needs Sales Ops permission (Opp_Reopen_Lost)"] }
+          - { id: won, class: won, title: Closed Won, width: 230, attributes: ["Only from Negotiation (Opp_Won_Via_Negotiation)", "Cannot change once set (Opp_Lock_Closed_Won)"] }
+connections:
+  - { from: prospect, to: qual, label: next }
+  - { from: qual, to: prop, label: next }
+  - { from: prop, to: nego, label: next }
+  - { from: nego, to: won, label: "win" , color: "#2E8B57" }
+  - { from: qual, to: lost, label: "any open stage", color: "#C23934", style: dashed }
+  - { from: lost, to: prospect, label: reopen, style: dotted, fromSide: top, toSide: bottom }

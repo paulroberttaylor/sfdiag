@@ -1,0 +1,56 @@
+title: "Opp_Enterprise_Discount_Approval"
+description: >-
+  Opportunity validation rule, read as a decision flow. An Enterprise opportunity
+  with a discount over 20% can only be saved once the discount is approved.
+  Users with the Bypass Validation permission skip the check.
+classes:
+  ok: { label: Record saves, fill: "#E0F3E0", color: "#67B4A0" }
+  block: { label: Save blocked, fill: "#FDE2E1", color: "#C23934" }
+  check: { label: Condition in the formula, fill: "#D1F6FF", color: "#6FC3D8" }
+nodes:
+  - id: flow
+    frame: none
+    layout: column
+    align: start
+    gap: 50
+    children:
+      - { id: start, shape: pill, title: User saves Opportunity, width: 200 }
+      - id: r1
+        frame: none
+        align: center
+        gap: 110
+        children:
+          - { id: d1, shape: decision, class: check, title: "Bypass permission?", width: 200 }
+          - { id: s1, class: ok, title: Saves, width: 150 }
+      - id: r2
+        frame: none
+        align: center
+        gap: 110
+        children:
+          - { id: d2, shape: decision, class: check, title: "Record type is Enterprise?", width: 200 }
+          - { id: s2, class: ok, title: Saves, width: 150 }
+      - id: r3
+        frame: none
+        align: center
+        gap: 110
+        children:
+          - { id: d3, shape: decision, class: check, title: "Discount__c over 20%?", width: 200 }
+          - { id: s3, class: ok, title: Saves, width: 150 }
+      - id: r4
+        frame: none
+        align: center
+        gap: 110
+        children:
+          - { id: d4, shape: decision, class: check, title: "Approval_Status__c is Approved?", width: 200 }
+          - { id: s4, class: ok, title: Saves, width: 150 }
+      - { id: err, class: block, title: Save blocked, width: 200, attributes: ["Message on Discount field: \"Discounts over 20% need approval before saving.\""] }
+connections:
+  - { from: start, to: d1 }
+  - { from: d1, to: s1, label: "YES", color: "#2E8B57" }
+  - { from: d1, to: d2, label: "NO", color: "#C23934" }
+  - { from: d2, to: s2, label: "NO", color: "#2E8B57" }
+  - { from: d2, to: d3, label: "YES", color: "#C23934" }
+  - { from: d3, to: s3, label: "NO", color: "#2E8B57" }
+  - { from: d3, to: d4, label: "YES", color: "#C23934" }
+  - { from: d4, to: s4, label: "YES", color: "#2E8B57" }
+  - { from: d4, to: err, label: "NO", color: "#C23934", fromSide: bottom }
